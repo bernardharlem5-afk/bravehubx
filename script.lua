@@ -1,6 +1,3 @@
-local _print, _warn = print, warn
-print = function() end
-warn = function() end
 
 local Airflow = loadstring(game:HttpGet("https://raw.githubusercontent.com/PookiePepelsss/Airflow-UI/refs/heads/main/Source.luau"))()
 Airflow:LoadFont({Name = "ValleySans"})
