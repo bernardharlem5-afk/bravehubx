@@ -1,7 +1,3 @@
--- ============================================================
--- FATAL LABS — Arcade Basketball + Basketball Legends + Hoopz
--- ============================================================
-
 local _print, _warn = print, warn
 print = function() end
 warn = function() end
@@ -1302,3 +1298,1622 @@ else
         local frameSkip = 0
         guardConnection = RunService.Stepped:Connect(function()
             if not s.Defending.AutoGuard then return end
+            frameSkip += 1
+            if frameSkip < 3 then return end
+            frameSkip = 0
+            local char, myHum = getChar()
+            if not myHum or hasball(char) then return end
+            local mode = getGuardMode()
+            local closestDribbler = getClosestDribbler()
+            if closestDribbler then
+                local guardPos
+                if mode == "legit" then
+                    guardPos = getNearestGuardPosition(closestDribbler)
+                elseif mode == "blatant" then
+                    guardPos = getGuardPosition(closestDribbler)
+                    if guardPos and closestDribbler.Character and closestDribbler.Character:FindFirstChild("HumanoidRootPart") then
+                        local targetRoot = closestDribbler.Character.HumanoidRootPart
+                        local myRoot = char:FindFirstChild("HumanoidRootPart")
+                        if myRoot and (targetRoot.Position - myRoot.Position).Magnitude < 18 then
+                            guardPos = targetRoot.Position + (targetRoot.CFrame.LookVector * Vector3.new(1, 0, 1)).Unit * 3
+                        end
+                    end
+                else
+                    guardPos = getGuardPosition(closestDribbler)
+                end
+                if guardPos then myHum:MoveTo(guardPos) end
+                return
+            end
+            if s.Defending.AutoGuardNearest then
+                local nearest = getClosestPlayer()
+                if nearest then
+                    local guardPos
+                    if mode == "legit" then
+                        guardPos = getNearestGuardPosition(nearest)
+                    elseif mode == "blatant" then
+                        guardPos = getNearestGuardPosition(nearest)
+                        if guardPos then
+                            local myRoot = char:FindFirstChild("HumanoidRootPart")
+                            if myRoot then
+                                local targetRoot = nearest.Character and nearest.Character:FindFirstChild("HumanoidRootPart")
+                                if targetRoot and (targetRoot.Position - myRoot.Position).Magnitude < 20 then
+                                    guardPos = targetRoot.Position + targetRoot.CFrame.LookVector * 4
+                                end
+                            end
+                        end
+                    else
+                        guardPos = getNearestGuardPosition(nearest)
+                    end
+                end
+            end
+        end)
+    end
+    Track(guardConnection)
+
+    local function disableAutoGuard()
+        if guardConnection then guardConnection:Disconnect(); guardConnection = nil end
+    end
+
+    local magnetHitbox, magnetConnection = nil, nil
+
+    local function createMagnetHitbox(character)
+        if magnetHitbox then magnetHitbox:Destroy(); magnetHitbox = nil end
+        if character:FindFirstChild("FatalMagnet") then character.FatalMagnet:Destroy() end
+        local head = character:FindFirstChild("Head")
+        if not head then return end
+        magnetHitbox = Instance.new("Part")
+        magnetHitbox.Name = "FatalMagnet"
+        magnetHitbox.Shape = Enum.PartType.Ball
+        magnetHitbox.Size = Vector3.new(s.Ball.BallMagRange, s.Ball.BallMagRange, s.Ball.BallMagRange)
+        magnetHitbox.Transparency = 1
+        magnetHitbox.CanCollide = false
+        magnetHitbox.CanQuery = false
+        magnetHitbox.Massless = true
+        magnetHitbox.Parent = character
+        local weld = Instance.new("Weld")
+        weld.Part0 = head
+        weld.Part1 = magnetHitbox
+        weld.Parent = magnetHitbox
+        local magnetBox = Instance.new("SelectionSphere")
+        magnetBox.Name = "FatalMagnetBox"
+        magnetBox.Adornee = magnetHitbox
+        magnetBox.Color3 = Color3.fromRGB(190, 165, 240)
+        magnetBox.Transparency = s.Ball.BallMagVisualizer and 0.2 or 1
+        magnetBox.SurfaceTransparency = 1
+        magnetBox.Parent = magnetHitbox
+        magnetHitbox.Touched:Connect(function(part)
+            if not s.Ball.BallMags or hasball(LocalPlayer.Character) then return end
+            if part.Name == "Ball" or (part.Parent and part.Parent.Name == "Basketball") then
+                firetouchinterest(head, part, 0)
+                task.wait()
+                firetouchinterest(head, part, 1)
+            end
+        end)
+    end
+
+    local function enableMagnet()
+        local char = LocalPlayer.Character
+        if not char then return end
+        createMagnetHitbox(char)
+        if magnetConnection then magnetConnection:Disconnect(); magnetConnection = nil end
+        magnetConnection = RunService.Heartbeat:Connect(function()
+            if not s.Ball.BallMags then return end
+            local character = LocalPlayer.Character
+            if character and not character:FindFirstChild("FatalMagnet") then
+                createMagnetHitbox(character)
+            end
+        end)
+        Track(magnetConnection)
+    end
+
+    local function disableMagnet()
+        if magnetConnection then magnetConnection:Disconnect(); magnetConnection = nil end
+        if magnetHitbox then magnetHitbox:Destroy(); magnetHitbox = nil end
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("FatalMagnet") then
+            LocalPlayer.Character.FatalMagnet:Destroy()
+        end
+    end
+
+    local reachVisualizer, reachConnection = nil, nil
+
+    local function removeReachVisualizer()
+        if reachVisualizer then reachVisualizer:Destroy(); reachVisualizer = nil end
+    end
+
+    local function performReachSteal()
+        if not s.Ball.BallReach then return end
+        local char = LocalPlayer.Character
+        if not char or char:FindFirstChild("Basketball") then return end
+        local head = char:FindFirstChild("Head")
+        if not head then return end
+        local range = s.Ball.BallReachRange or 10
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player == LocalPlayer then continue end
+            local pChar = player.Character
+            if pChar then
+                local basketball = pChar:FindFirstChild("Basketball")
+                if basketball then
+                    local ballPart = basketball:FindFirstChild("Ball") or basketball:FindFirstChildOfClass("BasePart")
+                    if ballPart and (head.Position - ballPart.Position).Magnitude <= range then
+                        firetouchinterest(head, ballPart, 0)
+                        task.wait()
+                        firetouchinterest(head, ballPart, 1)
+                        return
+                    end
+                end
+            end
+        end
+    end
+
+    local function updateReachVisualizer()
+        if not s.Ball.BallReachVisualizer then removeReachVisualizer(); return end
+        local closest, closestDist = nil, math.huge
+        local myChar = LocalPlayer.Character
+        local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        if myRoot then
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p == LocalPlayer then continue end
+                local c = p.Character
+                local b = c and c:FindFirstChild("Basketball")
+                local r = c and c:FindFirstChild("HumanoidRootPart")
+                if b and r then
+                    local d = (myRoot.Position - r.Position).Magnitude
+                    if d < closestDist then closestDist = d; closest = p end
+                end
+            end
+        end
+        local ballPart = nil
+        if closest and closest.Character then
+            local oppBall = closest.Character:FindFirstChild("Basketball")
+            if oppBall then ballPart = oppBall:FindFirstChild("Ball") end
+        end
+        if not ballPart then removeReachVisualizer(); return end
+        local range = s.Ball.BallReachRange or 10
+        if not reachVisualizer or not reachVisualizer.Parent then
+            reachVisualizer = Instance.new("Part")
+            reachVisualizer.Name = "ReachBallVisualizer"
+            reachVisualizer.Shape = Enum.PartType.Ball
+            reachVisualizer.Size = Vector3.new(range, range, range)
+            reachVisualizer.Transparency = 1
+            reachVisualizer.CanCollide = false
+            reachVisualizer.CanTouch = false
+            reachVisualizer.CanQuery = false
+            reachVisualizer.CastShadow = false
+            reachVisualizer.Massless = true
+            reachVisualizer.Anchored = true
+            reachVisualizer.Color = Color3.fromRGB(190, 165, 240)
+            reachVisualizer.Parent = workspace
+            local sphereBox = Instance.new("SelectionSphere")
+            sphereBox.Name = "FatalReachSphere"
+            sphereBox.Adornee = reachVisualizer
+            sphereBox.Transparency = 0.75
+            sphereBox.SurfaceTransparency = 1
+            sphereBox.Color3 = Color3.fromRGB(190, 165, 240)
+            sphereBox.Parent = reachVisualizer
+        end
+        reachVisualizer.Size = Vector3.new(range, range, range)
+        reachVisualizer.CFrame = ballPart.CFrame
+    end
+
+    local function enableReach()
+        local char = LocalPlayer.Character
+        if not char then return end
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("FatalReach") then
+            LocalPlayer.Character.FatalReach:Destroy()
+        end
+        if reachConnection then reachConnection:Disconnect(); reachConnection = nil end
+        reachConnection = RunService.Heartbeat:Connect(function()
+            if not s.Ball.BallReach and not s.Ball.BallReachVisualizer then return end
+            if s.Ball.BallReach then performReachSteal() end
+            if s.Ball.BallReachVisualizer then updateReachVisualizer() else removeReachVisualizer() end
+        end)
+        Track(reachConnection)
+    end
+
+    local function disableReach()
+        if reachConnection then reachConnection:Disconnect(); reachConnection = nil end
+        removeReachVisualizer()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("FatalReach") then
+            LocalPlayer.Character.FatalReach:Destroy()
+        end
+    end
+
+    local tpWalkConnection = nil
+
+    local function enableTPWalk()
+        if tpWalkConnection then tpWalkConnection:Disconnect(); tpWalkConnection = nil end
+        tpWalkConnection = RunService.Heartbeat:Connect(function()
+            if not s.TPWalk.Enabled then return end
+            local character = LocalPlayer.Character
+            if not character then return end
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if rootPart and humanoid and humanoid.MoveDirection.Magnitude > 0 then
+                rootPart.CFrame = rootPart.CFrame + humanoid.MoveDirection * s.TPWalk.Speed
+            end
+        end)
+        Track(tpWalkConnection)
+    end
+
+    local function disableTPWalk()
+        if tpWalkConnection then tpWalkConnection:Disconnect(); tpWalkConnection = nil end
+    end
+
+    local magV2Connection = nil
+
+    local function magV2Tick()
+        if not s.MagV2.Enabled then return end
+        local character, _, touchPart = getChar()
+        if not character or not touchPart then return end
+        local ballName = s.MagV2.BallName
+        local reach = tonumber(s.MagV2.Reach) or 20
+        for _, object in pairs(workspace:GetDescendants()) do
+            if object.Name == ballName and object:IsA("BasePart") then
+                if object:FindFirstChildWhichIsA("TouchTransmitter") or object:FindFirstChild("TouchInterest") then
+                    if (touchPart.Position - object.Position).Magnitude <= reach then
+                        firetouchinterest(touchPart, object, 0)
+                        task.wait()
+                        firetouchinterest(touchPart, object, 1)
+                    end
+                end
+            end
+        end
+    end
+
+    local function enableMagV2()
+        if magV2Connection then magV2Connection:Disconnect(); magV2Connection = nil end
+        magV2Connection = RunService.Heartbeat:Connect(function() pcall(magV2Tick) end)
+        Track(magV2Connection)
+    end
+
+    local function disableMagV2()
+        if magV2Connection then magV2Connection:Disconnect(); magV2Connection = nil end
+    end
+
+    local Effects = {}
+    local function loadEffects()
+        pcall(function()
+            local folder = ReplicatedStorage.ShopItems.Effect
+            for _, eff in folder:GetChildren() do
+                Effects[eff.Name:gsub("Effect_", "")] = eff
+            end
+        end)
+    end
+    loadEffects()
+
+    local goalEventHook = nil
+
+    local function applyGoalEffect()
+        if not Effects[s.Goal.CurrentEffect] then return end
+        pcall(function()
+            local PlayerData = require(ReplicatedStorage.Util.PlayerData)
+            PlayerData.storedData["Equipping"]["Effect"] = Effects[s.Goal.CurrentEffect].Name
+            PlayerData.storedData["Inventory"][Effects[s.Goal.CurrentEffect].Name] = 1
+        end)
+        if goalEventHook then return end
+        pcall(function()
+            local connections = getconnections(ReplicatedStorage.Remotes.goalEvent.OnClientEvent)
+            if connections and connections[1] then
+                local old
+                old = hookfunction(connections[1].Function, function(Player, Court, Goal, XYZ, GoalEffect, Unknown)
+                    if Player == LocalPlayer and s.Goal.Enabled then
+                        GoalEffect = Effects[s.Goal.CurrentEffect].Value
+                    end
+                    return old(Player, Court, Goal, XYZ, GoalEffect, Unknown)
+                end)
+                goalEventHook = old
+            end
+        end)
+    end
+
+    local function resetGoalEffect()
+        pcall(function()
+            local PlayerData = require(ReplicatedStorage.Util.PlayerData)
+            PlayerData.storedData["Equipping"]["Effect"] = Effects["LightRay"].Name
+            PlayerData.storedData["Inventory"][Effects["LightRay"].Name] = 1
+        end)
+    end
+
+    local function SpoofDevice()
+        if not s.Misc.DeviceSpoofer then return end
+        local device = s.Misc.Device
+        if device == "PC" then DeviceEvent:FireServer("Desktop")
+        elseif device == "Mobile" then DeviceEvent:FireServer("Mobile")
+        elseif device == "Gamepad" then DeviceEvent:FireServer("Gamepad") end
+    end
+
+    local Moderators = {
+        "izzran", "wistfulmikk", "Bibliogical", "aepione", "kyraizo",
+        "ar1sxm", "westline60s", "Iukejdjd", "Ninja215215"
+    }
+    local antiModTask = nil
+    local Notify
+
+    local function startAntiMod()
+        if antiModTask then return end
+        antiModTask = task.spawn(function()
+            local detected = {}
+            while s.Misc.AntiModerator do
+                task.wait(1)
+                for _, moderator in next, Players:GetPlayers() do
+                    if table.find(Moderators, moderator.Name) and not detected[moderator.UserId] then
+                        detected[moderator.UserId] = true
+                        if Notify then
+                            Notify({ title = "Moderator Detected", content = moderator.Name .. " is in the server.", duration = 5 })
+                        end 
+                    end
+                end
+            end
+        end)
+    end
+
+    local function stopAntiMod()
+        s.Misc.AntiModerator = false
+        if antiModTask then task.cancel(antiModTask); antiModTask = nil end
+    end
+
+    local Balls, BallNames = {}, {}
+    local Trails, TrailNames = {}, {}
+    local Auras, AuraNames = {}, {}
+    local Courts, CourtNames = {}, {}
+    local OriginalReplicateBall, Replicator = nil, nil
+    local OriginalReplicateTrail = nil
+    local OriginalReplicateAura = nil
+    local OriginalReplicateCourt = nil
+
+    pcall(function()
+        Replicator = require(ReplicatedStorage.Util.Replicator)
+        OriginalReplicateBall = Replicator["ReplicateBall"]
+        OriginalReplicateTrail = Replicator["ReplicateTrail"]
+        OriginalReplicateAura = Replicator["ReplicateAura"]
+        OriginalReplicateCourt = Replicator["ReplicateCourt"]
+
+        for _, ballItem in ReplicatedStorage.ShopItems.Ball:GetChildren() do
+            local name = ballItem.Name:gsub("Ball_", "")
+            Balls[name] = ballItem.Name
+            table.insert(BallNames, name)
+        end
+        table.sort(BallNames)
+
+        local trailFolder = ReplicatedStorage.ShopItems:FindFirstChild("Trail")
+        if trailFolder then
+            for _, item in trailFolder:GetChildren() do
+                local name = item.Name:gsub("Trail_", "")
+                Trails[name] = item.Name
+                table.insert(TrailNames, name)
+            end
+            table.sort(TrailNames)
+        end
+
+        local auraFolder = ReplicatedStorage.ShopItems:FindFirstChild("Aura")
+        if auraFolder then
+            for _, item in auraFolder:GetChildren() do
+                local name = item.Name:gsub("Aura_", "")
+                Auras[name] = item.Name
+                table.insert(AuraNames, name)
+            end
+            table.sort(AuraNames)
+        end
+
+        -- Court skin list: try multiple known folder names
+        local function addCourtFolder(folder)
+            if not folder then return end
+            for _, item in folder:GetChildren() do
+                local name = item.Name:gsub("^CourtSkin_", ""):gsub("^Court_", ""):gsub("^Skin_", "")
+                if not Courts[name] then
+                    Courts[name] = item.Name
+                    table.insert(CourtNames, name)
+                end
+            end
+        end
+        local shop = ReplicatedStorage:FindFirstChild("ShopItems")
+        if shop then
+            addCourtFolder(shop:FindFirstChild("CourtSkin"))
+            addCourtFolder(shop:FindFirstChild("Courts"))
+            addCourtFolder(shop:FindFirstChild("Court"))
+        end
+        -- Fallback: scan any folder named Court* under ReplicatedStorage
+        if #CourtNames == 0 then
+            for _, inst in ReplicatedStorage:GetDescendants() do
+                if inst:IsA("Folder") and inst.Name:lower():find("court", 1, true) and inst.Parent then
+                    addCourtFolder(inst)
+                end
+            end
+        end
+        table.sort(CourtNames)
+        if #CourtNames > 0 and (s.CourtSpoofer.SelectedCourt == "None" or s.CourtSpoofer.CurrentCourt == "None") then
+            s.CourtSpoofer.SelectedCourt = CourtNames[1]
+            s.CourtSpoofer.CurrentCourt = CourtNames[1]
+        end
+    end)
+
+    local function ownerOfParent(parent)
+        local node = parent
+        for _ = 1, 6 do
+            if not node then break end
+            if node:IsA("Model") then
+                local plr = Players:GetPlayerFromCharacter(node)
+                if plr then return plr end
+            end
+            node = node.Parent
+        end
+        return nil
+    end
+
+    local function applyBallChanger()
+        if not Replicator or not OriginalReplicateBall then return end
+        Replicator["ReplicateBall"] = function(Parent, Name)
+            if ownerOfParent(Parent) == LocalPlayer then
+                local spoofed = Balls[s.BallChanger.CurrentBall]
+                if spoofed then Name = spoofed end
+            end
+            return OriginalReplicateBall(Parent, Name)
+        end
+    end
+
+    local function resetBallChanger()
+        if not Replicator or not OriginalReplicateBall then return end
+        Replicator["ReplicateBall"] = OriginalReplicateBall
+    end
+
+    local function applyTrailSpoofer()
+        if not Replicator or not OriginalReplicateTrail then return end
+        Replicator["ReplicateTrail"] = function(Parent, Name)
+            if ownerOfParent(Parent) == LocalPlayer then
+                local spoofed = Trails[s.TrailSpoofer.CurrentTrail]
+                if spoofed then Name = spoofed end
+            end
+            return OriginalReplicateTrail(Parent, Name)
+        end
+    end
+
+    local function resetTrailSpoofer()
+        if not Replicator or not OriginalReplicateTrail then return end
+        Replicator["ReplicateTrail"] = OriginalReplicateTrail
+    end
+
+    local function applyBallAura()
+        if not Replicator or not OriginalReplicateAura then return end
+        Replicator["ReplicateAura"] = function(Parent, Name)
+            if ownerOfParent(Parent) == LocalPlayer then
+                local spoofed = Auras[s.BallAura.CurrentAura]
+                if spoofed then Name = spoofed end
+            end
+            return OriginalReplicateAura(Parent, Name)
+        end
+    end
+
+    local function resetBallAura()
+        if not Replicator or not OriginalReplicateAura then return end
+        Replicator["ReplicateAura"] = OriginalReplicateAura
+    end
+
+    -- ============================================================
+    -- COURT SKIN SPOOFER (Replicator hook + PlayerData fallback)
+    -- ============================================================
+    local function applyCourtSpoofer()
+        local target = Courts[s.CourtSpoofer.CurrentCourt]
+        if not target then
+            Notify({ title = "Court Spoofer", content = "Selected court not found.", duration = 3 })
+            return
+        end
+        if Replicator and OriginalReplicateCourt then
+            Replicator["ReplicateCourt"] = function(Parent, Name)
+                if ownerOfParent(Parent) == LocalPlayer then
+                    local spoofed = Courts[s.CourtSpoofer.CurrentCourt]
+                    if spoofed then Name = spoofed end
+                end
+                return OriginalReplicateCourt(Parent, Name)
+            end
+        end
+        pcall(function()
+            local PlayerData = require(ReplicatedStorage.Util.PlayerData)
+            PlayerData.storedData["Equipping"]["CourtSkin"] = target
+            PlayerData.storedData["Inventory"][target] = 1
+        end)
+        Notify({ title = "Court Spoofer", content = "Applied: " .. s.CourtSpoofer.CurrentCourt, duration = 2.5 })
+    end
+
+    local function resetCourtSpoofer()
+        if Replicator and OriginalReplicateCourt then
+            Replicator["ReplicateCourt"] = OriginalReplicateCourt
+        end
+        pcall(function()
+            local PlayerData = require(ReplicatedStorage.Util.PlayerData)
+            PlayerData.storedData["Equipping"]["CourtSkin"] = nil
+        end)
+    end
+
+    local indicator = Instance.new("BillboardGui")
+    indicator.Name = "RangeIndicator"
+    indicator.Size = UDim2.fromOffset(90, 90)
+    indicator.AlwaysOnTop = true
+    indicator.StudsOffsetWorldSpace = Vector3.new(0, 3.6, 0)
+
+    local indicatorRing = Instance.new("ImageLabel")
+    indicatorRing.Name = "Ring"
+    indicatorRing.Size = UDim2.fromScale(1, 1)
+    indicatorRing.BackgroundTransparency = 1
+    indicatorRing.Image = "rbxassetid://3570695787"
+    indicatorRing.ImageColor3 = Color3.fromRGB(190, 165, 240)
+    indicatorRing.ImageTransparency = 0.15
+    indicatorRing.ScaleType = Enum.ScaleType.Fit
+    indicatorRing.Parent = indicator
+
+    local indicatorDot = Instance.new("Frame")
+    indicatorDot.Name = "Dot"
+    indicatorDot.Size = UDim2.fromOffset(6, 6)
+    indicatorDot.AnchorPoint = Vector2.new(0.5, 0.5)
+    indicatorDot.Position = UDim2.fromScale(0.5, 0.5)
+    indicatorDot.BackgroundColor3 = Color3.fromRGB(190, 165, 240)
+    indicatorDot.BorderSizePixel = 0
+    indicatorDot.Parent = indicator
+    local indicatorDotCorner = Instance.new("UICorner")
+    indicatorDotCorner.CornerRadius = UDim.new(1, 0)
+    indicatorDotCorner.Parent = indicatorDot
+
+    local rangeConnection = nil
+
+    local function applyIndicatorColor()
+        local col = IndicatorColors[s.Visuals.IndicatorColor] or Color3.fromRGB(190, 165, 240)
+        indicatorRing.ImageColor3 = col
+        indicatorDot.BackgroundColor3 = col
+    end
+
+    local function setShotIndicator(value)
+        s.Visuals.ShotIndicator = value
+        if rangeConnection then rangeConnection:Disconnect(); rangeConnection = nil end
+        indicator.Parent = nil
+        if not value then return end
+        local throttle = 0
+        rangeConnection = RunService.Heartbeat:Connect(function(dt)
+            throttle += dt
+            if throttle < 0.05 then return end
+            throttle = 0
+            local character = LocalPlayer.Character
+            local root = character and character:FindFirstChild("HumanoidRootPart")
+            if not root or not hasball(character) then indicator.Parent = nil; return end
+            local goal, distance = nearestgoal(root)
+            if goal and distance >= 12 and distance <= 73 then
+                applyIndicatorColor()
+                if indicator.Parent ~= character then
+                    indicator.Adornee = character
+                    indicator.Parent = character
+                end
+            else
+                indicator.Parent = nil
+            end
+        end)
+        Track(rangeConnection)
+    end
+
+    local AURAL_MIN_DIST = 12
+    local AURAL_MAX_DIST = 73
+
+    local shot_data = {
+        [59]=83,[60]=81,[61]=82,[62]=79,[63]=78.8,[64]=75,[65]=74.8,[66]=71,
+        [67]=70.8,[68]=66,[69]=62,[70]=59,[71]=51,[72]=51,[73]=51
+    }
+
+    local inner_arc_data = {
+        [7]=123,[8]=122,[9]=121,[10]=120,[11]=119,[12]=118,[13]=117,[14]=116,[15]=115,[16]=114,
+        [17]=113,[18]=112,[19]=111,[20]=110,[21]=109,[22]=108,[23]=107,[24]=106,[25]=105,
+        [26]=105,
+        [27]=106,[28]=106,[29]=107,[30]=107,[31]=106,[32]=105,[33]=105,[34]=104,[35]=103,
+        [36]=103,
+        [37]=102,[38]=102,[39]=101,[40]=101,[41]=100,[42]=99,[43]=99,[44]=98,[45]=97,[46]=96,
+        [47]=95,[48]=95,[49]=94,[50]=93,[51]=91,[52]=90,[53]=88,[54]=87,[55]=85,[56]=84,[57]=82,
+        [58]=81
+    }
+
+    local mobileArcs = {
+        [30]=38,[31]=38,[32]=38,[33]=38,[34]=38,[35]=38,[36]=38,[37]=38,[38]=38,[39]=38,
+        [40]=39,[41]=38,[42]=38,[43]=38,[44]=38,[45]=38,[46]=38,[47]=38,[48]=38,[49]=38,
+        [50]=38,[51]=37,[52]=37,[53]=37,[54]=36,[55]=34,[56]=34,[57]=34,[58]=34,[59]=31,
+        [60]=31,[61]=31,[62]=31,[63]=29,[64]=29,[65]=29,[66]=26,[67]=26,[68]=24,[69]=24,
+        [70]=21,[71]=21,[72]=19,[73]=19
+    }
+
+    local function getArcOffset(dist)
+        if isMobile then
+            local d = math.floor(dist + 0.5)
+            if d < 30 then d = 30 end
+            if d > 73 then d = 73 end
+            return mobileArcs[d] or 37
+        end
+        if inner_arc_data[dist] then return inner_arc_data[dist] end
+        if shot_data[dist] then return shot_data[dist] end
+        if dist < 7 then return 122 end
+        if dist > 73 then return math.max(20, 50 - (dist - 73) * 1.5) end
+        local lower, upper
+        for d in pairs(inner_arc_data) do
+            if d <= dist and (not lower or d > lower) then lower = d end
+            if d >= dist and (not upper or d < upper) then upper = d end
+        end
+        for d in pairs(shot_data) do
+            if d <= dist and (not lower or d > lower) then lower = d end
+            if d >= dist and (not upper or d < upper) then upper = d end
+        end
+        if lower and upper and lower ~= upper then
+            local lowerVal = inner_arc_data[lower] or shot_data[lower] or 0
+            local upperVal = inner_arc_data[upper] or shot_data[upper] or 0
+            return lowerVal + (upperVal - lowerVal) * ((dist - lower) / (upper - lower))
+        elseif lower then
+            return inner_arc_data[lower] or shot_data[lower] or 0
+        elseif upper then
+            return inner_arc_data[upper] or shot_data[upper] or 0
+        end
+        return 100
+    end
+
+    local Icon = nil
+    local IconCenter = nil
+    do
+        pcall(function()
+            local PowerUI = LocalPlayer.PlayerGui:WaitForChild("PowerUI")
+            Icon = PowerUI:WaitForChild("CursorIcon")
+            local CursorIcon2 = PowerUI:WaitForChild("CursorIcon2")
+            task.delay(5, function()
+                if Icon then
+                    IconCenter = Vector2.new(Icon.AbsolutePosition.X + Icon.AbsoluteSize.X / 2, Icon.AbsolutePosition.Y + Icon.AbsoluteSize.Y / 2)
+                    Icon:Destroy()
+                end
+                if CursorIcon2 then CursorIcon2.Visible = false end
+            end)
+        end)
+    end
+
+    local state = {
+        target = nil, connections = {}, actorst = nil, actorname = nil,
+        actors = {}, oldnewindex = nil, active = true, clicking = false
+    }
+    local function addconnection(c) table.insert(state.connections, c); return c end
+
+    local function settarget(target)
+        state.target = target
+        if state.actorst then pcall(function() state.actorst.t = target end) end
+    end
+
+    local function doClick()
+        if state.clicking then return end
+        state.clicking = true
+        getgenv().__fatal_aiming = true
+        if isMobile then
+            if Icon then
+                local pos = Vector2.new(Icon.AbsolutePosition.X + Icon.AbsoluteSize.X / 2, Icon.AbsolutePosition.Y + Icon.AbsoluteSize.Y / 2)
+                VirtualInput:SendTouchEvent(1, 0, pos.X, pos.Y)
+                VirtualInput:SendTouchEvent(1, 2, pos.X, pos.Y)
+            elseif IconCenter then
+                VirtualInput:SendTouchEvent(1, 0, IconCenter.X, IconCenter.Y)
+                VirtualInput:SendTouchEvent(1, 2, IconCenter.X, IconCenter.Y)
+            end
+        else
+            local vp = Camera.ViewportSize
+            VirtualInput:SendMouseButtonEvent(vp.X / 2, vp.Y / 2, 0, true, game, 1)
+            VirtualInput:SendMouseButtonEvent(vp.X / 2, vp.Y / 2, 0, false, game, 1)
+        end
+        task.delay(0.35, function()
+            state.clicking = false
+            getgenv().__fatal_aiming = false
+        end)
+    end
+
+    local function velocify(target, dist)
+        local _, _, hrp = getChar()
+        if not hrp then return target end
+        local v = hrp.AssemblyLinearVelocity
+        local prediction = (dist / 50) * 0.06
+        return target + Vector3.new(v.X * prediction, 0, v.Z * prediction)
+    end
+
+    local auralTick = 0
+    local function updateAuralTarget(dt)
+        if not state.active or not s.Shooting.AuralEnabled then
+            if state.target ~= nil then settarget(nil) end
+            return
+        end
+        auralTick += dt
+        if auralTick < 0.05 then return end
+        auralTick = 0
+        local char, hum = getChar()
+        if not char or not hum or not hasball(char) then
+            if state.target ~= nil then settarget(nil) end
+            return
+        end
+        if hum.FloorMaterial ~= Enum.Material.Air and not hum.Jump then
+            if state.target ~= nil then settarget(nil) end
+            return
+        end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if not root then settarget(nil); return end
+        local goal, distance = nearestgoal(root)
+        if not goal or distance < AURAL_MIN_DIST or distance > AURAL_MAX_DIST then
+            if state.target ~= nil then settarget(nil) end
+            return
+        end
+        local offset = getArcOffset(distance) + s.Shooting.ShotYAxis
+        if s.Shooting.HumanizeAim then
+            local strength = s.Shooting.HumanizeStrength or 1.2
+            local missChance = (s.Shooting.MissChance or 12) / 100
+            if math.random() < missChance then
+                if math.random() < 0.5 then
+                    offset += strength * 3 + math.random() * strength * 2
+                else
+                    offset -= strength * 3 + math.random() * strength * 2
+                end
+            else
+                offset += (math.random() * 2 - 1) * strength
+            end
+        end
+        settarget(velocify(goal.Position + Vector3.new(0, offset, 0), distance))
+    end
+
+    local actorcode = [==[
+local registry = game:GetService("SharedTableRegistry")
+local players = game:GetService("Players")
+local st = registry:GetSharedTable(__fatalaimtable)
+local camera = workspace.CurrentCamera
+local function target() local v = st.t return typeof(v) == "Vector3" and v or nil end
+local function aimcframe()
+    local v = target()
+    local char = players.LocalPlayer.Character
+    local head = char and char:FindFirstChild("Head")
+    if v and head then return CFrame.new(head.Position, v) end
+end
+pcall(function()
+    local oldrender
+    oldrender = hookfunction(camera.GetRenderCFrame, function(self, ...) return aimcframe() or oldrender(self, ...) end)
+    local oldscreen
+    oldscreen = hookfunction(camera.ScreenPointToRay, function(self, ...)
+        local v = aimcframe()
+        if v then return Ray.new(v.Position, v.LookVector) end
+        return oldscreen(self, ...)
+    end)
+    local oldviewport
+    oldviewport = hookfunction(camera.ViewportPointToRay, function(self, ...)
+        local v = aimcframe()
+        if v then return Ray.new(v.Position, v.LookVector) end
+        return oldviewport(self, ...)
+    end)
+    local cameradata = registry:GetSharedTable("CameraData")
+    local history = cameradata.CameraHistory
+    local meta = getrawmetatable(cameradata)
+    local oldnewindex
+    oldnewindex = hookfunction(meta.__newindex, newcclosure(function(tab, key, value)
+        local current = tab == cameradata and key == "CameraCFrame"
+        local previous = history ~= nil and tab == history and type(key) == "number"
+        local aimed = aimcframe()
+        if aimed and (current or previous) then return oldnewindex(tab, key, aimed) end
+        return oldnewindex(tab, key, value)
+    end))
+end)
+]==]
+
+    local function hookmain()
+        pcall(function()
+            state.actorname = "sa" .. tostring(math.floor(os.clock() * 100000)) .. tostring(math.random(10000, 99999))
+            state.actorst = SharedTableRegistry:GetSharedTable(state.actorname)
+            state.actorst.t = nil
+            local cameradata = SharedTableRegistry:GetSharedTable("CameraData")
+            local history = cameradata.CameraHistory
+            local meta = getrawmetatable(cameradata)
+            state.oldnewindex = hookfunction(meta.__newindex, newcclosure(function(tab, key, value)
+                local current = tab == cameradata and key == "CameraCFrame"
+                local previous = history ~= nil and tab == history and type(key) == "number"
+                local tgt = state.target
+                if tgt and (current or previous) and typeof(value) == "CFrame" then
+                    local char = LocalPlayer.Character
+                    local head = char and char:FindFirstChild("Head")
+                    if head then
+                        return state.oldnewindex(tab, key, CFrame.new(head.Position, tgt))
+                    end
+                end
+                return state.oldnewindex(tab, key, value)
+            end))
+        end)
+    end
+
+    local function hookactors()
+        if type(getactors) ~= "function" or type(run_on_actor) ~= "function" or not state.actorname then return end
+        local ok, actors = pcall(getactors)
+        if not ok or type(actors) ~= "table" then return end
+        local code = "local __fatalaimtable = " .. string.format("%q", state.actorname) .. " " .. actorcode
+        for _, actor in actors do
+            if not state.actors[actor] then
+                if pcall(run_on_actor, actor, code) then
+                    state.actors[actor] = true
+                end
+            end
+        end
+    end
+
+    hookmain()
+    hookactors()
+
+    addconnection(Players.PlayerAdded:Connect(function() task.defer(hookactors) end))
+    addconnection(RunService.Heartbeat:Connect(updateAuralTarget))
+
+    local function setupCharacterAural(char)
+        local hum = char:WaitForChild("Humanoid", 5)
+        if not hum then return end
+        local jumps = 0
+        addconnection(hum.Jumping:Connect(function(active)
+            if not active then return end
+            if not s.Shooting.AuralEnabled or not hasball(char) then return end
+            if s.Shooting.EBLHop then
+                jumps += 1
+                if jumps < 2 then return end
+                jumps = 0
+            end
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            local goal, distance = nearestgoal(root)
+            local minDist = isMobile and 30 or AURAL_MIN_DIST
+            if not goal or distance < minDist or distance > AURAL_MAX_DIST then return end
+            local arc = getArcOffset(distance) + s.Shooting.ShotYAxis
+            local targetPos = nil
+            if s.Shooting.HumanizeAim then
+                local strength = s.Shooting.HumanizeStrength or 1.2
+                local missChance = (s.Shooting.MissChance or 12) / 100
+                if math.random() < missChance then
+                    local mode = math.random(1, 3)
+                    if mode == 1 then
+                        arc += strength * 3 + math.random() * strength * 2
+                    elseif mode == 2 then
+                        arc -= strength * 3 + math.random() * strength * 2
+                    else
+                        local side = (math.random() < 0.5) and -1 or 1
+                        targetPos = goal.Position
+                            + Vector3.new(0, getArcOffset(distance) + s.Shooting.ShotYAxis, 0)
+                            + Camera.CFrame.RightVector * (side * (strength * 2 + math.random() * 2))
+                    end
+                else
+                    arc += (math.random() * 2 - 1) * strength
+                end
+            end
+            targetPos = targetPos or goal.Position + Vector3.new(0, arc, 0)
+            settarget(targetPos)
+            task.wait(0.05)
+            LocalPlayer:SetAttribute("Power", 85)
+            local shotdelay = s.Shooting.ShotDelay or 0.25
+            if s.Shooting.RandomizeShotDelay then
+                local mn = s.Shooting.ShotDelayMin or 0.15
+                local mx = s.Shooting.ShotDelayMax or 0.35
+                if mx < mn then mx = mn end
+                shotdelay = mn + math.random() * (mx - mn)
+            end
+            task.wait(shotdelay)
+            doClick()
+            task.wait(0.1)
+            updateAuralTarget(0.1)
+        end))
+    end
+
+    if LocalPlayer.Character then setupCharacterAural(LocalPlayer.Character) end
+    addconnection(LocalPlayer.CharacterAdded:Connect(setupCharacterAural))
+
+    local textListeners = {}
+    local originalNameTexts, originalRecordTexts, originalTitleTexts = {}, {}, {}
+
+    local function formatStrokeText(orig, custom)
+        if not custom or custom == "" then return orig end
+        if orig and orig:match("^<stroke>") and orig:match("</stroke>$") then
+            return "<stroke>" .. custom .. "</stroke>"
+        end
+        return custom
+    end
+
+    local function applyOwnNameplate()
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local nameTag = hrp:FindFirstChild("NameTag")
+        if not nameTag or not nameTag:IsA("BillboardGui") then return end
+        for _, tagName in ipairs({"NameTag", "CreatorTag", "TeamSpot"}) do
+            local tag = hrp:FindFirstChild(tagName)
+            if tag and tag:IsA("BillboardGui") then
+                tag.Enabled = not s.Visuals.HideOwnNameplate
+            end
+        end
+        local mainFrame = nameTag:FindFirstChild("MainFrame")
+        local gameFrame = nameTag:FindFirstChild("GameFrame")
+        local subFrame = mainFrame and mainFrame:FindFirstChild("Frame")
+        local nameLabels = {}
+        if mainFrame and mainFrame:FindFirstChild("NameLabel") then table.insert(nameLabels, mainFrame.NameLabel) end
+        if gameFrame and gameFrame:FindFirstChild("NameLabel") then table.insert(nameLabels, gameFrame.NameLabel) end
+        for _, obj in ipairs(nameTag:GetDescendants()) do
+            if obj:IsA("TextLabel") and obj.Name == "NameLabel" and not table.find(nameLabels, obj) then
+                table.insert(nameLabels, obj)
+            end
+        end
+        for _, obj in ipairs(nameLabels) do
+            if not originalNameTexts[obj] then originalNameTexts[obj] = obj.Text end
+            local target = (s.Visuals.CustomNameText ~= "") and s.Visuals.CustomNameText or originalNameTexts[obj]
+            if obj.Text ~= target then obj.Text = target end
+            if not textListeners[obj] then
+                textListeners[obj] = obj:GetPropertyChangedSignal("Text"):Connect(function()
+                    if s.Visuals.CustomNameText ~= "" and obj.Text ~= s.Visuals.CustomNameText then
+                        obj.Text = s.Visuals.CustomNameText
+                    end
+                end)
+            end
+        end
+        local recordLabels = {}
+        if subFrame and subFrame:FindFirstChild("RecordLabel") then table.insert(recordLabels, subFrame.RecordLabel) end
+        for _, obj in ipairs(nameTag:GetDescendants()) do
+            if obj:IsA("TextLabel") and obj.Name == "RecordLabel" and not table.find(recordLabels, obj) then
+                table.insert(recordLabels, obj)
+            end
+        end
+        for _, obj in ipairs(recordLabels) do
+            if not originalRecordTexts[obj] then originalRecordTexts[obj] = obj.Text end
+            local target = formatStrokeText(originalRecordTexts[obj], s.Visuals.CustomRecordText)
+            if obj.Text ~= target then obj.Text = target end
+            if not textListeners[obj] then
+                textListeners[obj] = obj:GetPropertyChangedSignal("Text"):Connect(function()
+                    if s.Visuals.CustomRecordText ~= "" then
+                        local expected = formatStrokeText(originalRecordTexts[obj], s.Visuals.CustomRecordText)
+                        if obj.Text ~= expected then obj.Text = expected end
+                    end
+                end)
+            end
+        end
+        local titleLabels = {}
+        if subFrame and subFrame:FindFirstChild("AchievementName") then table.insert(titleLabels, subFrame.AchievementName) end
+        for _, obj in ipairs(nameTag:GetDescendants()) do
+            if obj:IsA("TextLabel") and (obj.Name == "AchievementName" or obj.Name == "TitleLabel") and not table.find(titleLabels, obj) then
+                table.insert(titleLabels, obj)
+            end
+        end
+        for _, obj in ipairs(titleLabels) do
+            if not originalTitleTexts[obj] then originalTitleTexts[obj] = obj.Text end
+            local target = formatStrokeText(originalTitleTexts[obj], s.Visuals.CustomTitleText)
+            if obj.Text ~= target then obj.Text = target end
+            if not textListeners[obj] then
+                textListeners[obj] = obj:GetPropertyChangedSignal("Text"):Connect(function()
+                    if s.Visuals.CustomTitleText ~= "" then
+                        local expected = formatStrokeText(originalTitleTexts[obj], s.Visuals.CustomTitleText)
+                        if obj.Text ~= expected then obj.Text = expected end
+                    end
+                end)
+            end
+        end
+    end
+
+    local ownNameplateConnection = nil
+
+    local function setupOwnNameplateListener()
+        if ownNameplateConnection then return end
+        local function onChar(char)
+            task.wait(0.2)
+            applyOwnNameplate()
+            local hrp = char:WaitForChild("HumanoidRootPart", 5)
+            if hrp then
+                hrp.ChildAdded:Connect(function(child)
+                    if child:IsA("BillboardGui") then
+                        task.wait(0.05)
+                        applyOwnNameplate()
+                    end
+                end)
+                local nameTag = hrp:WaitForChild("NameTag", 5)
+                if nameTag then
+                    nameTag.DescendantAdded:Connect(function()
+                        task.wait(0.05)
+                        applyOwnNameplate()
+                    end)
+                end
+            end
+        end
+        if LocalPlayer.Character then task.spawn(onChar, LocalPlayer.Character) end
+        ownNameplateConnection = LocalPlayer.CharacterAdded:Connect(onChar)
+        Track(ownNameplateConnection)
+    end
+    setupOwnNameplateListener()
+
+    local Window = Airflow:CreateWindow({Name = "Fatal Labs", LoadingSubtitle = "Fatal Labs basketball suite", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
+
+    Notify = function(props) Window:Notify(props) end
+
+    local CombatTab = Window:CreateTab({ Name = "Combat", Icon = "swords" })
+    local BallTab = Window:CreateTab({ Name = "Ball", Icon = "circle" })
+    local HVHTab = Window:CreateTab({ Name = "HVH", Icon = "activity" })
+    local VisualsTab = Window:CreateTab({ Name = "Visuals", Icon = "eye" })
+    local PrivacyTab = Window:CreateTab({ Name = "Privacy", Icon = "user" })
+    local UtilityTab = Window:CreateTab({ Name = "Utility", Icon = "list" })
+
+    CombatTab:CreateSection("Silent Aim")
+    CombatTab:CreateToggle({
+        Name = "Enable Silent Aim",
+        Desc = "Automatically Shoots when you Jump",
+        Flag = "fatal_aural",
+        CurrentValue = s.Shooting.AuralEnabled,
+        Callback = function(v) setAural(v) end,
+    })
+    CombatTab:CreateKeybind({
+        Name = "Aimbot keybind",
+        Flag = "fatal_aural_key",
+        CurrentValue = s.Shooting.AuralKeybind,
+        Callback = function(key)
+            if typeof(key) == "EnumItem" then s.Shooting.AuralKeybind = key end
+        end,
+    })
+    CombatTab:CreateSlider({
+        Name = "Shot delay",
+        Range = { 0.15, 0.42 }, Increment = 0.01, Suffix = "s",
+        CurrentValue = s.Shooting.ShotDelay, Flag = "fatal_delay",
+        Callback = function(v) s.Shooting.ShotDelay = v end,
+    })
+    CombatTab:CreateToggle({
+        Name = "Randomize shot delay", Flag = "fatal_randdelay",
+        CurrentValue = s.Shooting.RandomizeShotDelay,
+        Callback = function(v) s.Shooting.RandomizeShotDelay = v end,
+    })
+    CombatTab:CreateSlider({
+        Name = "Min delay", Range = { 0, 1 }, Increment = 0.05, Suffix = "s",
+        CurrentValue = s.Shooting.ShotDelayMin, Flag = "fatal_mindelay",
+        Callback = function(v) s.Shooting.ShotDelayMin = v end,
+    })
+    CombatTab:CreateSlider({
+        Name = "Max delay", Range = { 0, 1 }, Increment = 0.05, Suffix = "s",
+        CurrentValue = s.Shooting.ShotDelayMax, Flag = "fatal_maxdelay",
+        Callback = function(v) s.Shooting.ShotDelayMax = v end,
+    })
+    CombatTab:CreateToggle({
+        Name = "EBL Hop", Desc = "Require second jump before firing.",
+        Flag = "fatal_ebl", CurrentValue = s.Shooting.EBLHop,
+        Callback = function(v) s.Shooting.EBLHop = v end,
+    })
+    CombatTab:CreateToggle({
+        Name = "Humanize aim", Flag = "fatal_human",
+        CurrentValue = s.Shooting.HumanizeAim,
+        Callback = function(v) s.Shooting.HumanizeAim = v end,
+    })
+    CombatTab:CreateSlider({
+        Name = "Humanize strength", Range = { 0.2, 5 }, Increment = 0.1,
+        CurrentValue = s.Shooting.HumanizeStrength, Flag = "fatal_hstr",
+        Callback = function(v) s.Shooting.HumanizeStrength = v end,
+    })
+    CombatTab:CreateSlider({
+        Name = "Miss chance", Range = { 0, 80 }, Increment = 1, Suffix = "%",
+        CurrentValue = s.Shooting.MissChance, Flag = "fatal_miss",
+        Callback = function(v) s.Shooting.MissChance = v end,
+    })
+    CombatTab:CreateSection("Auto Guard")
+    CombatTab:CreateToggle({
+        Name = "Auto guard", Flag = "fatal_guard", CurrentValue = s.Defending.AutoGuard,
+        Callback = function(v) setGuard(v) end,
+    })
+    CombatTab:CreateKeybind({
+        Name = "Auto guard keybind", Flag = "fatal_guard_key",
+        CurrentValue = s.Defending.GuardKeybind,
+        Callback = function(key)
+            if typeof(key) == "EnumItem" then s.Defending.GuardKeybind = key end
+        end,
+    })
+    CombatTab:CreateDropdown({
+        Name = "Guard mode", Options = { "Reactive", "Balanced", "Aggressive" },
+        CurrentValue = s.Defending.AutoGuardMode, Flag = "fatal_guard_mode",
+        Callback = function(v) s.Defending.AutoGuardMode = v end,
+    })
+    CombatTab:CreateToggle({
+        Name = "Guard nearest if no dribbler", Flag = "fatal_guard_near",
+        CurrentValue = s.Defending.AutoGuardNearest,
+        Callback = function(v) s.Defending.AutoGuardNearest = v end,
+    })
+    CombatTab:CreateSlider({
+        Name = "Guard range", Range = { 10, 60 }, Increment = 1,
+        CurrentValue = s.Defending.AutoGuardRange, Flag = "fatal_guard_range",
+        Callback = function(v) s.Defending.AutoGuardRange = v end,
+    })
+    CombatTab:CreateSlider({
+        Name = "Prediction strength", Range = { 0.1, 1 }, Increment = 0.05,
+        CurrentValue = s.Defending.GuardPrediction, Flag = "fatal_guard_pred",
+        Callback = function(v) s.Defending.GuardPrediction = v end,
+    })
+
+    BallTab:CreateSection("Ball Magnet")
+    BallTab:CreateToggle({
+        Name = "Ball magnet", Flag = "fatal_mag", CurrentValue = s.Ball.BallMags,
+        Callback = function(v) setMagnet(v) end,
+    })
+    BallTab:CreateKeybind({
+        Name = "Magnet keybind", Flag = "fatal_mag_key", CurrentValue = Enum.KeyCode.M,
+        Callback = function(key)
+            if typeof(key) == "EnumItem" then s.Ball.MagnetKeybind = key.Name end
+        end,
+    })
+    BallTab:CreateSlider({
+        Name = "Magnet size", Range = { 1, 50 }, Increment = 1,
+        CurrentValue = s.Ball.BallMagRange, Flag = "fatal_mag_size",
+        Callback = function(v)
+            s.Ball.BallMagRange = v
+            if magnetHitbox then magnetHitbox.Size = Vector3.new(v, v, v) end
+        end,
+    })
+    BallTab:CreateToggle({
+        Name = "Show magnet visualizer", Flag = "fatal_mag_vis",
+        CurrentValue = s.Ball.BallMagVisualizer,
+        Callback = function(v)
+            s.Ball.BallMagVisualizer = v
+            if magnetHitbox then
+                local box = magnetHitbox:FindFirstChild("FatalMagnetBox")
+                if box then box.Transparency = v and 0.2 or 1 end
+            end
+        end,
+    })
+
+    BallTab:CreateSection("Mag V2")
+    BallTab:CreateToggle({
+        Name = "Mag V2",
+        Desc = "Standalone touch-magnet. Uses its own ball name & reach.",
+        Flag = "fatal_magv2", CurrentValue = s.MagV2.Enabled,
+        Callback = function(v) setMagV2(v) end,
+    })
+    BallTab:CreateKeybind({
+        Name = "Mag V2 keybind", Desc = "Default U. Toggle Mag V2 on/off.",
+        Flag = "fatal_magv2_key", CurrentValue = s.MagV2.Keybind,
+        Callback = function(key)
+            if typeof(key) == "EnumItem" then s.MagV2.Keybind = key end
+        end,
+    })
+    BallTab:CreateInput({
+        Name = "Mag V2 ball name", Placeholder = "Ball",
+        CurrentValue = s.MagV2.BallName, Flag = "fatal_magv2_name",
+        Callback = function(text)
+            if text ~= "" then s.MagV2.BallName = text end
+        end,
+    })
+    BallTab:CreateSlider({
+        Name = "Mag V2 reach", Range = { 1, 100 }, Increment = 1,
+        CurrentValue = s.MagV2.Reach, Flag = "fatal_magv2_reach",
+        Callback = function(v) s.MagV2.Reach = v end,
+    })
+
+    BallTab:CreateSection("Ball Reach")
+    BallTab:CreateToggle({
+        Name = "Ball reach", Flag = "fatal_reach", CurrentValue = s.Ball.BallReach,
+        Callback = function(v) setReach(v) end,
+    })
+    BallTab:CreateKeybind({
+        Name = "Reach keybind", Flag = "fatal_reach_key", CurrentValue = Enum.KeyCode.N,
+        Callback = function(key)
+            if typeof(key) == "EnumItem" then s.Ball.ReachKeybind = key.Name end
+        end,
+    })
+    BallTab:CreateSlider({
+        Name = "Reach size", Range = { 1, 30 }, Increment = 1,
+        CurrentValue = s.Ball.BallReachRange, Flag = "fatal_reach_size",
+        Callback = function(v) s.Ball.BallReachRange = v end,
+    })
+    BallTab:CreateToggle({
+        Name = "Show reach visualizer", Flag = "fatal_reach_vis",
+        CurrentValue = s.Ball.BallReachVisualizer,
+        Callback = function(v)
+            s.Ball.BallReachVisualizer = v
+            if v then
+                enableReach()
+            else
+                removeReachVisualizer()
+                if not s.Ball.BallReach then disableReach() end
+            end
+        end,
+    })
+
+    BallTab:CreateSection("TPWalk")
+    BallTab:CreateToggle({
+        Name = "tpwalk",
+        Desc = "Teleport-walk; nudges your root part each frame for a smooth glide.",
+        Flag = "fatal_tpwalk", CurrentValue = s.TPWalk.Enabled,
+        Callback = function(v) setTPWalk(v) end,
+    })
+    BallTab:CreateKeybind({
+        Name = "tpwalk keybind", Flag = "fatal_tpwalk_key",
+        CurrentValue = s.TPWalk.Keybind,
+        Callback = function(key)
+            if typeof(key) == "EnumItem" then s.TPWalk.Keybind = key end
+        end,
+    })
+    BallTab:CreateSlider({
+        Name = "tpwalk speed", Desc = "Step distance per frame (0.001 – 0.06).",
+        Range = { 0.001, 0.06 }, Increment = 0.001,
+        CurrentValue = s.TPWalk.Speed, Flag = "fatal_tpwalk_speed",
+        Callback = function(v) s.TPWalk.Speed = v end,
+    })
+
+    buildHVHTab(HVHTab, s.HVH)
+
+    VisualsTab:CreateSection("Aimbot Range Indicator")
+    VisualsTab:CreateToggle({
+        Name = "Aimbot range indicator", Flag = "fatal_ind",
+        CurrentValue = s.Visuals.ShotIndicator,
+        Callback = setShotIndicator,
+    })
+    VisualsTab:CreateDropdown({
+        Name = "Indicator color",
+        Options = { "Blue", "Purple", "Green", "Red", "Yellow" },
+        CurrentValue = s.Visuals.IndicatorColor, Flag = "fatal_ind_col",
+        Callback = function(v) s.Visuals.IndicatorColor = v; applyIndicatorColor() end,
+    })
+
+    VisualsTab:CreateSection("Goal Effect")
+    local function getEffectNames()
+        local names = {}
+        for k in pairs(Effects) do table.insert(names, k) end
+        table.sort(names)
+        return names
+    end
+    VisualsTab:CreateDropdown({
+        Name = "Select effect", Options = getEffectNames(),
+        CurrentValue = s.Goal.SelectedEffect, Flag = "fatal_goal_sel",
+        Callback = function(v)
+            s.Goal.SelectedEffect = v
+            s.Goal.CurrentEffect = v
+            if s.Goal.Enabled then pcall(applyGoalEffect) end
+        end,
+    })
+    VisualsTab:CreateToggle({
+        Name = "Enable goal effect changer", Flag = "fatal_goal",
+        CurrentValue = s.Goal.Enabled,
+        Callback = function(v)
+            s.Goal.Enabled = v
+            if v then pcall(applyGoalEffect) else pcall(resetGoalEffect) end
+        end,
+    })
+    VisualsTab:CreateButton({
+        Name = "Reset goal effect",
+        Callback = function()
+            s.Goal.Enabled = false
+            s.Goal.SelectedEffect = "LightRay"
+            s.Goal.CurrentEffect = "LightRay"
+            pcall(resetGoalEffect)
+        end,
+    })
+
+    VisualsTab:CreateSection("Court Spoofer")
+    VisualsTab:CreateDropdown({
+        Name = "Select court", Options = #CourtNames > 0 and CourtNames or { "None" },
+        CurrentValue = s.CourtSpoofer.SelectedCourt, Flag = "fatal_court_sel",
+        Callback = function(v)
+            s.CourtSpoofer.SelectedCourt = v
+            s.CourtSpoofer.CurrentCourt = v
+            if s.CourtSpoofer.Enabled then pcall(applyCourtSpoofer) end
+        end,
+    })
+    VisualsTab:CreateToggle({
+        Name = "Enable court spoofer", Flag = "fatal_court",
+        CurrentValue = s.CourtSpoofer.Enabled,
+        Callback = function(v)
+            s.CourtSpoofer.Enabled = v
+            if v then pcall(applyCourtSpoofer) else pcall(resetCourtSpoofer) end
+        end,
+    })
+    VisualsTab:CreateButton({
+        Name = "Reset court",
+        Callback = function()
+            s.CourtSpoofer.Enabled = false
+            s.CourtSpoofer.SelectedCourt = "None"
+            s.CourtSpoofer.CurrentCourt = "None"
+            pcall(resetCourtSpoofer)
+        end,
+    })
+
+    VisualsTab:CreateSection("Nameplate & Title")
+    VisualsTab:CreateToggle({
+        Name = "Hide my nameplate & tags", Flag = "fatal_np_hide",
+        CurrentValue = s.Visuals.HideOwnNameplate,
+        Callback = function(v) s.Visuals.HideOwnNameplate = v; applyOwnNameplate() end,
+    })
+    VisualsTab:CreateInput({
+        Name = "Custom username", Placeholder = "e.g. Fatal",
+        CurrentValue = s.Visuals.CustomNameText, Flag = "fatal_np_name",
+        Callback = function(text)
+            s.Visuals.CustomNameText = text
+            s.Visuals.CustomName = (text ~= "")
+            applyOwnNameplate()
+        end,
+    })
+    VisualsTab:CreateInput({
+        Name = "Custom record", Placeholder = "e.g. 99-0",
+        CurrentValue = s.Visuals.CustomRecordText, Flag = "fatal_np_rec",
+        Callback = function(text)
+            s.Visuals.CustomRecordText = text
+            s.Visuals.CustomRecord = (text ~= "")
+            applyOwnNameplate()
+        end,
+    })
+    VisualsTab:CreateInput({
+        Name = "Custom title", Placeholder = "e.g. Fatal Elite",
+        CurrentValue = s.Visuals.CustomTitleText, Flag = "fatal_np_title",
+        Callback = function(text)
+            s.Visuals.CustomTitleText = text
+            s.Visuals.CustomTitle = (text ~= "")
+            applyOwnNameplate()
+        end,
+    })
+
+    PrivacyTab:CreateSection("Device Spoofer")
+    PrivacyTab:CreateToggle({
+        Name = "Device spoofer", Flag = "fatal_dev", CurrentValue = s.Misc.DeviceSpoofer,
+        Callback = function(v) s.Misc.DeviceSpoofer = v; SpoofDevice() end,
+    })
+    PrivacyTab:CreateDropdown({
+        Name = "Device", Options = { "PC", "Mobile", "Gamepad" },
+        CurrentValue = s.Misc.Device, Flag = "fatal_dev_sel",
+        Callback = function(v) s.Misc.Device = v; SpoofDevice() end,
+    })
+
+    PrivacyTab:CreateSection("Ball Changer")
+    PrivacyTab:CreateDropdown({
+        Name = "Select ball", Options = #BallNames > 0 and BallNames or { "None" },
+        CurrentValue = s.BallChanger.SelectedBall, Flag = "fatal_ball_sel",
+        Callback = function(v)
+            s.BallChanger.SelectedBall = v
+            s.BallChanger.CurrentBall = v
+            if s.BallChanger.Enabled then pcall(applyBallChanger) end
+        end,
+    })
+    PrivacyTab:CreateToggle({
+        Name = "Enable ball changer", Flag = "fatal_ball",
+        CurrentValue = s.BallChanger.Enabled,
+        Callback = function(v)
+            s.BallChanger.Enabled = v
+            if v then pcall(applyBallChanger) else pcall(resetBallChanger) end
+        end,
+    })
+    PrivacyTab:CreateButton({
+        Name = "Reset ball",
+        Callback = function()
+            s.BallChanger.Enabled = false
+            s.BallChanger.SelectedBall = "ForceField"
+            s.BallChanger.CurrentBall = "ForceField"
+            pcall(resetBallChanger)
+        end,
+    })
+
+    PrivacyTab:CreateSection("Trail Spoofer")
+    PrivacyTab:CreateDropdown({
+        Name = "Select trail", Options = #TrailNames > 0 and TrailNames or { "None" },
+        CurrentValue = s.TrailSpoofer.SelectedTrail, Flag = "fatal_trail_sel",
+        Callback = function(v)
+            s.TrailSpoofer.SelectedTrail = v
+            s.TrailSpoofer.CurrentTrail = v
+            if s.TrailSpoofer.Enabled then pcall(applyTrailSpoofer) end
+        end,
+    })
+    PrivacyTab:CreateToggle({
+        Name = "Enable trail spoofer", Flag = "fatal_trail",
+        CurrentValue = s.TrailSpoofer.Enabled,
+        Callback = function(v)
+            s.TrailSpoofer.Enabled = v
+            if v then pcall(applyTrailSpoofer) else pcall(resetTrailSpoofer) end
+        end,
+    })
+    PrivacyTab:CreateButton({
+        Name = "Reset trail",
+        Callback = function()
+            s.TrailSpoofer.Enabled = false
+            s.TrailSpoofer.SelectedTrail = "None"
+            s.TrailSpoofer.CurrentTrail = "None"
+            pcall(resetTrailSpoofer)
+        end,
+    })
+
+    PrivacyTab:CreateSection("Ball Aura Spoofer")
+    PrivacyTab:CreateDropdown({
+        Name = "Select aura", Options = #AuraNames > 0 and AuraNames or { "None" },
+        CurrentValue = s.BallAura.SelectedAura, Flag = "fatal_aura_sel",
+        Callback = function(v)
+            s.BallAura.SelectedAura = v
+            s.BallAura.CurrentAura = v
+            if s.BallAura.Enabled then pcall(applyBallAura) end
+        end,
+    })
+    PrivacyTab:CreateToggle({
+        Name = "Enable ball aura spoofer", Flag = "fatal_aura",
+        CurrentValue = s.BallAura.Enabled,
+        Callback = function(v)
+            s.BallAura.Enabled = v
+            if v then pcall(applyBallAura) else pcall(resetBallAura) end
+        end,
+    })
+    PrivacyTab:CreateButton({
+        Name = "Reset ball aura",
+        Callback = function()
+            s.BallAura.Enabled = false
+            s.BallAura.SelectedAura = "None"
+            s.BallAura.CurrentAura = "None"
+            pcall(resetBallAura)
+        end,
+    })
+
+    UtilityTab:CreateSection("Anti Moderator")
+    UtilityTab:CreateToggle({
+        Name = "Anti moderator", Desc = "Notifies when a moderator is in the server.",
+        Flag = "fatal_mod", CurrentValue = s.Misc.AntiModerator,
+        Callback = function(v)
+            s.Misc.AntiModerator = v
+            if v then startAntiMod() else stopAntiMod() end
+        end,
+    })
+
+    setAural = function(on)
+        s.Shooting.AuralEnabled = (on == nil) and (not s.Shooting.AuralEnabled) or on
+        MobileRefresh()
+    end
+    setGuard = function(on)
+        s.Defending.AutoGuard = (on == nil) and (not s.Defending.AutoGuard) or on
+        if s.Defending.AutoGuard then enableAutoGuard() else disableAutoGuard() end
+        MobileRefresh()
+    end
+    setMagnet = function(on)
+        s.Ball.BallMags = (on == nil) and (not s.Ball.BallMags) or on
+        if s.Ball.BallMags then enableMagnet() else disableMagnet() end
+        MobileRefresh()
+    end
+    setReach = function(on)
+        s.Ball.BallReach = (on == nil) and (not s.Ball.BallReach) or on
+        if s.Ball.BallReach then enableReach() else disableReach() end
+        MobileRefresh()
+    end
+    setTPWalk = function(on)
+        s.TPWalk.Enabled = (on == nil) and (not s.TPWalk.Enabled) or on
+        if s.TPWalk.Enabled then enableTPWalk() else disableTPWalk() end
+        MobileRefresh()
+    end
+    setMagV2 = function(on)
+        s.MagV2.Enabled = (on == nil) and (not s.MagV2.Enabled) or on
+        if s.MagV2.Enabled then enableMagV2() else disableMagV2() end
+        MobileRefresh()
+    end
+
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        local magKey = s.Ball.MagnetKeybind
+        if magKey and input.KeyCode == Enum.KeyCode[magKey] then setMagnet() end
+    end)
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        local bind = s.Shooting.AuralKeybind
+        local targetKey = (type(bind) == "string") and Enum.KeyCode[bind] or bind
+        if input.KeyCode == targetKey then setAural() end
+    end)
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        local bind = s.Defending.GuardKeybind
+        local targetKey = (type(bind) == "string") and Enum.KeyCode[bind] or bind
+        if input.KeyCode == targetKey then setGuard() end
+    end)
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        local bind = s.HVH.Speed.Keybind
+        local targetKey = (type(bind) == "string") and Enum.KeyCode[bind] or bind
+        if input.KeyCode == targetKey then
+            s.HVH.Speed.Enabled = not s.HVH.Speed.Enabled
+        end
+    end)
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        if input.KeyCode == s.TPWalk.Keybind then setTPWalk() end
+    end)
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        if input.KeyCode == s.MagV2.Keybind then setMagV2() end
+    end)
+
+    if isMobile then
+        local ScreenGui = Instance.new("ScreenGui")
+        ScreenGui.Name = "FatalLabsMobile"
+        ScreenGui.ResetOnSpawn = false
+        ScreenGui.IgnoreGuiInset = true
+        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        ScreenGui.DisplayOrder = 200
+        pcall(function()
+            if gethui then ScreenGui.Parent = gethui()
+            else ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+        end)
+
+        local Panel = Instance.new("Frame")
+        Panel.Name = "Panel"
+        Panel.Size = UDim2.fromOffset(52, 320)
+        Panel.Position = UDim2.new(1, -64, 0.5, -160)
+        Panel.BackgroundTransparency = 1
+        Panel.Parent = ScreenGui
+
+        local Layout = Instance.new("UIListLayout")
+        Layout.Padding = UDim.new(0, 5)
+        Layout.SortOrder = Enum.SortOrder.LayoutOrder
+        Layout.Parent = Panel
+
+        local function makeButton(label, order, onClick, isOn)
+            local Button = Instance.new("TextButton")
+            Button.Name = label
+            Button.Size = UDim2.fromOffset(52, 40)
+            Button.BackgroundColor3 = isOn and Color3.fromRGB(190, 165, 240) or Color3.fromRGB(26, 26, 28)
+            Button.BackgroundTransparency = 0.05
+            Button.Text = label
+            Button.TextColor3 = isOn and Color3.fromRGB(20, 15, 30) or Color3.fromRGB(235, 230, 255)
+            Button.TextSize = 12
+            Button.Font = Enum.Font.GothamBold
+            Button.AutoButtonColor = false
+            Button.LayoutOrder = order
+            Button.Parent = Panel
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(1, 0)
+            Corner.Parent = Button
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = isOn and Color3.fromRGB(220, 200, 255) or Color3.fromRGB(100, 88, 130)
+            Stroke.Thickness = 1.2
+            Stroke.Transparency = 0.15
+            Stroke.Parent = Button
+            Button.MouseButton1Click:Connect(onClick)
+            return Button, Stroke
+        end
+
+        local Aim, AimS = makeButton("Aim", 1, function() setAural() end, s.Shooting.AuralEnabled)
+        local Guard, GuardS = makeButton("Guard", 2, function() setGuard() end, s.Defending.AutoGuard)
+        local Mag, MagS = makeButton("Mag", 3, function() setMagnet() end, s.Ball.BallMags)
+        local MagV2, MagV2S = makeButton("MagV2", 4, function() setMagV2() end, s.MagV2.Enabled)
+        local Reach, ReachS = makeButton("Reach", 5, function() setReach() end, s.Ball.BallReach)
+        local TPW, TPWS = makeButton("TPWalk", 6, function() setTPWalk() end, s.TPWalk.Enabled)
+
+        local function paint(btn, stroke, on)
+            btn.BackgroundColor3 = on and Color3.fromRGB(190, 165, 240) or Color3.fromRGB(26, 26, 28)
+            btn.TextColor3 = on and Color3.fromRGB(20, 15, 30) or Color3.fromRGB(235, 230, 255)
+            stroke.Color = on and Color3.fromRGB(220, 200, 255) or Color3.fromRGB(100, 88, 130)
+        end
+
+        MobileRefresh = function()
+            paint(Aim, AimS, s.Shooting.AuralEnabled)
+            paint(Guard, GuardS, s.Defending.AutoGuard)
+            paint(Mag, MagS, s.Ball.BallMags)
+            paint(MagV2, MagV2S, s.MagV2.Enabled)
+            paint(Reach, ReachS, s.Ball.BallReach)
+            paint(TPW, TPWS, s.TPWalk.Enabled)
+        end
+
+        local dragging = false
+        local dragStart, startPos
+        Panel.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch
+                or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                dragStart = input.Position
+                startPos = Panel.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                end)
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.Touch
+                or input.UserInputType == Enum.UserInputType.MouseMovement) then
+                local delta = input.Position - dragStart
+                Panel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end)
+
+        OnCleanup(function()
+            pcall(function() ScreenGui:Destroy() end)
+        end)
+    end
+
+    hvhStart()
+
+    OnCleanup(function()
+        pcall(disableAutoGuard)
+        pcall(disableMagnet)
+        pcall(disableMagV2)
+        pcall(disableReach)
+        pcall(disableTPWalk)
+        pcall(hvhResetAll)
+        pcall(hvhStop)
+        pcall(resetBallChanger)
+        pcall(resetTrailSpoofer)
+        pcall(resetBallAura)
+        pcall(resetGoalEffect)
+        pcall(resetCourtSpoofer)
+        pcall(stopAntiMod)
+        pcall(function() setShotIndicator(false) end)
+        for _, c in Cleanup.conns do pcall(function() c:Disconnect() end) end
+    end)
+end
