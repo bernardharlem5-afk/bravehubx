@@ -2308,7 +2308,7 @@ end)
     end
     setupOwnNameplateListener()
 
-    local Window = Airflow:CreateWindow({Name = "Calm Hub", LoadingSubtitle = "Credits To AuralHub", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
+    local Window = Airflow:CreateWindow({Name = "Project Nova", LoadingSubtitle = "Credits To AuralHub & Xen", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
 
     Notify = function(props) Window:Notify(props) end
 
@@ -2602,7 +2602,7 @@ end)
         Callback = function(v) s.Visuals.HideOwnNameplate = v; applyOwnNameplate() end,
     })
     VisualsTab:CreateInput({
-        Name = "Custom username", Placeholder = "e.g. Calm",
+        Name = "Custom username", Placeholder = "e.g. Nova",
         CurrentValue = s.Visuals.CustomNameText, Flag = "fatal_np_name",
         Callback = function(text)
             s.Visuals.CustomNameText = text
@@ -2620,7 +2620,7 @@ end)
         end,
     })
     VisualsTab:CreateInput({
-        Name = "Custom title", Placeholder = "e.g. Calm Elite",
+        Name = "Custom title", Placeholder = "e.g. Nova Elite",
         CurrentValue = s.Visuals.CustomTitleText, Flag = "fatal_np_title",
         Callback = function(text)
             s.Visuals.CustomTitleText = text
