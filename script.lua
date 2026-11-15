@@ -2312,13 +2312,13 @@ end)
 
     Notify = function(props) Window:Notify(props) end
 
-    local CombatTab = Window:CreateTab({ Name = "Aimbot", Icon = "swords" })
-    local BallTab = Window:CreateTab({ Name = "Defense", Icon = "circle" })
-    local HVHTab = Window:CreateTab({ Name = "Ball", Icon = "activity" })
+    local AimbotTab = Window:CreateTab({ Name = "Aimbot", Icon = "swords" })
+    local DefenseTab = Window:CreateTab({ Name = "Defense", Icon = "circle" })
+    local BallTab = Window:CreateTab({ Name = "Ball", Icon = "activity" })
     local VisualsTab = Window:CreateTab({ Name = "Visuals", Icon = "eye" })
-    local PrivacyTab = Window:CreateTab({ Name = "HVH", Icon = "user" })
-    local UtilityTab = Window:CreateTab({ Name = "Speed", Icon = "list" })
-    local UtilityTab = Window:CreateTab({ Name = "Privacy", Icon = "list" })
+    local HVHTab = Window:CreateTab({ Name = "HVH", Icon = "user" })
+    local SpeedTab = Window:CreateTab({ Name = "Speed", Icon = "list" })
+    local PrivacyTab = Window:CreateTab({ Name = "Privacy", Icon = "list" })
         
     AimbotTab:CreateSection("Silent Aim")
     AimbotTab:CreateToggle({
