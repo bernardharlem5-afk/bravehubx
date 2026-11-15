@@ -2,7 +2,7 @@
 local Airflow = loadstring(game:HttpGet("https://raw.githubusercontent.com/PookiePepelsss/Airflow-UI/refs/heads/main/Source.luau"))()
 Airflow:LoadFont({Name = "ValleySans"})
 
-Airflow.Themes.CalmBlue = {
+Airflow.Themes.FatalBlue = {
     Background  = Color3.fromRGB(5,   10,  22),
     Surface     = Color3.fromRGB(9,   16,  34),
     Surface2    = Color3.fromRGB(13,  22,  45),
@@ -19,7 +19,6 @@ Airflow.Themes.CalmBlue = {
     Error       = Color3.fromRGB(240, 120, 120),
 }
 
-Airflow.Assets.Logo = "https://create.roblox.com/store/asset/9913176040/Floppa-Cat"
 
 -- ============================================================
 -- GAME ID WHITELIST
@@ -1396,7 +1395,7 @@ else
         magnetConnection = RunService.Heartbeat:Connect(function()
             if not s.Ball.BallMags then return end
             local character = LocalPlayer.Character
-            if character and not character:FindFirstChild("CalmMagnet") then
+            if character and not character:FindFirstChild("FatalMagnet") then
                 createMagnetHitbox(character)
             end
         end)
@@ -1406,7 +1405,7 @@ else
     local function disableMagnet()
         if magnetConnection then magnetConnection:Disconnect(); magnetConnection = nil end
         if magnetHitbox then magnetHitbox:Destroy(); magnetHitbox = nil end
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("CalmlMagnet") then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("FatalMagnet") then
             LocalPlayer.Character.FatalMagnet:Destroy()
         end
     end
@@ -1621,7 +1620,7 @@ else
 
     local Moderators = {
         "izzran", "wistfulmikk", "Bibliogical", "aepione", "kyraizo",
-        "ar1sxm", "westline60s", "Iukejdjd", "Ninja215215" "defscript"
+        "ar1sxm", "westline60s", "Iukejdjd", "Ninja215215"
     }
     local antiModTask = nil
     local Notify
@@ -2307,7 +2306,7 @@ end)
     end
     setupOwnNameplateListener()
 
-    local Window = Airflow:CreateWindow({Name = "Calm Hub", LoadingSubtitle = "Calm Hub basketball suite", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
+    local Window = Airflow:CreateWindow({Name = "Calm Hub", LoadingSubtitle = "Credits To Aural Hub", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
 
     Notify = function(props) Window:Notify(props) end
 
@@ -2317,12 +2316,12 @@ end)
     local VisualsTab = Window:CreateTab({ Name = "Visuals", Icon = "eye" })
     local PrivacyTab = Window:CreateTab({ Name = "Privacy", Icon = "user" })
     local UtilityTab = Window:CreateTab({ Name = "Utility", Icon = "list" })
-  local UtilityTab = Window:CreateTab({ Name = "Credits", Icon = "eye" })
+
     CombatTab:CreateSection("Silent Aim")
     CombatTab:CreateToggle({
         Name = "Enable Silent Aim",
         Desc = "Automatically Shoots when you Jump",
-        Flag = "Calm_aural",
+        Flag = "fatal_aural",
         CurrentValue = s.Shooting.AuralEnabled,
         Callback = function(v) setAural(v) end,
     })
@@ -2337,37 +2336,37 @@ end)
     CombatTab:CreateSlider({
         Name = "Shot delay",
         Range = { 0.15, 0.42 }, Increment = 0.01, Suffix = "s",
-        CurrentValue = s.Shooting.ShotDelay, Flag = "Calm_delay",
+        CurrentValue = s.Shooting.ShotDelay, Flag = "fatal_delay",
         Callback = function(v) s.Shooting.ShotDelay = v end,
     })
     CombatTab:CreateToggle({
-        Name = "Randomize shot delay", Flag = "Calm_randdelay",
+        Name = "Randomize shot delay", Flag = "fatal_randdelay",
         CurrentValue = s.Shooting.RandomizeShotDelay,
         Callback = function(v) s.Shooting.RandomizeShotDelay = v end,
     })
     CombatTab:CreateSlider({
         Name = "Min delay", Range = { 0, 1 }, Increment = 0.05, Suffix = "s",
-        CurrentValue = s.Shooting.ShotDelayMin, Flag = "Calm_mindelay",
+        CurrentValue = s.Shooting.ShotDelayMin, Flag = "fatal_mindelay",
         Callback = function(v) s.Shooting.ShotDelayMin = v end,
     })
     CombatTab:CreateSlider({
         Name = "Max delay", Range = { 0, 1 }, Increment = 0.05, Suffix = "s",
-        CurrentValue = s.Shooting.ShotDelayMax, Flag = "Calm_maxdelay",
+        CurrentValue = s.Shooting.ShotDelayMax, Flag = "fatal_maxdelay",
         Callback = function(v) s.Shooting.ShotDelayMax = v end,
     })
     CombatTab:CreateToggle({
         Name = "EBL Hop", Desc = "Require second jump before firing.",
-        Flag = "Calm_ebl", CurrentValue = s.Shooting.EBLHop,
+        Flag = "fatal_ebl", CurrentValue = s.Shooting.EBLHop,
         Callback = function(v) s.Shooting.EBLHop = v end,
     })
     CombatTab:CreateToggle({
-        Name = "Humanize aim", Flag = "Calm_human",
+        Name = "Humanize aim", Flag = "fatal_human",
         CurrentValue = s.Shooting.HumanizeAim,
         Callback = function(v) s.Shooting.HumanizeAim = v end,
     })
     CombatTab:CreateSlider({
         Name = "Humanize strength", Range = { 0.2, 5 }, Increment = 0.1,
-        CurrentValue = s.Shooting.HumanizeStrength, Flag = "Calm_hstr",
+        CurrentValue = s.Shooting.HumanizeStrength, Flag = "fatal_hstr",
         Callback = function(v) s.Shooting.HumanizeStrength = v end,
     })
     CombatTab:CreateSlider({
@@ -2381,7 +2380,7 @@ end)
         Callback = function(v) setGuard(v) end,
     })
     CombatTab:CreateKeybind({
-        Name = "Auto guard keybind", Flag = "Calm_guard_key",
+        Name = "Auto guard keybind", Flag = "fatal_guard_key",
         CurrentValue = s.Defending.GuardKeybind,
         Callback = function(key)
             if typeof(key) == "EnumItem" then s.Defending.GuardKeybind = key end
@@ -2410,11 +2409,11 @@ end)
 
     BallTab:CreateSection("Ball Magnet")
     BallTab:CreateToggle({
-        Name = "Ball magnet", Flag = "Calm_mag", CurrentValue = s.Ball.BallMags,
+        Name = "Ball magnet", Flag = "fatal_mag", CurrentValue = s.Ball.BallMags,
         Callback = function(v) setMagnet(v) end,
     })
     BallTab:CreateKeybind({
-        Name = "Magnet keybind", Flag = "Calm_mag_key", CurrentValue = Enum.KeyCode.M,
+        Name = "Magnet keybind", Flag = "fatal_mag_key", CurrentValue = Enum.KeyCode.M,
         Callback = function(key)
             if typeof(key) == "EnumItem" then s.Ball.MagnetKeybind = key.Name end
         end,
@@ -2428,7 +2427,7 @@ end)
         end,
     })
     BallTab:CreateToggle({
-        Name = "Show magnet visualizer", Flag = "Calm_mag_vis",
+        Name = "Show magnet visualizer", Flag = "fatal_mag_vis",
         CurrentValue = s.Ball.BallMagVisualizer,
         Callback = function(v)
             s.Ball.BallMagVisualizer = v
@@ -2610,8 +2609,8 @@ end)
         end,
     })
     VisualsTab:CreateInput({
-        Name = "Custom record", Placeholder = "e.g. 99-0",
-        CurrentValue = s.Visuals.CustomRecordText, Flag = "fatal_np_rec",
+        Name = "Custom record", Placeholder = "Calm e.g. 99-0",
+        CurrentValue = s.Visuals.CustomRecordText, Flag = "Calm_np_rec",
         Callback = function(text)
             s.Visuals.CustomRecordText = text
             s.Visuals.CustomRecord = (text ~= "")
@@ -2619,8 +2618,8 @@ end)
         end,
     })
     VisualsTab:CreateInput({
-        Name = "Custom title", Placeholder = "e.g. Fatal Elite",
-        CurrentValue = s.Visuals.CustomTitleText, Flag = "fatal_np_title",
+        Name = "Custom title", Placeholder = "e.g. Calm Elite",
+        CurrentValue = s.Visuals.CustomTitleText, Flag = "Calm_np_title",
         Callback = function(text)
             s.Visuals.CustomTitleText = text
             s.Visuals.CustomTitle = (text ~= "")
@@ -2732,37 +2731,7 @@ end)
             if v then startAntiMod() else stopAntiMod() end
         end,
     })
- UtilityTab:CreateSection("Credits" -- Credits Display Script
--- Works in standard Lua and Roblox Luau
 
--- Function to show credits
-local function showCredits()
-    local creditsText = "Credits: Xen and Aural Hub"
-    
-    -- Standard Lua output
-    print(creditsText)
-    
-    -- Roblox-specific output (if running in Roblox)
-    if typeof ~= nil and typeof(game) == "Instance" then
-        -- Create a simple ScreenGui with a TextLabel
-        local screenGui = Instance.new("ScreenGui")
-        screenGui.Name = "CreditsGui"
-        screenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-
-        local textLabel = Instance.new("TextLabel")
-        textLabel.Size = UDim2.new(0.5, 0, 0.1, 0)
-        textLabel.Position = UDim2.new(0.25, 0, 0.45, 0)
-        textLabel.BackgroundTransparency = 1
-        textLabel.Text = creditsText
-        textLabel.TextColor3 = Color3.new(1, 1, 1) -- White text
-        textLabel.TextScaled = true
-        textLabel.Parent = screenGui
-    end
-end
-
--- Run the function
-showCredits()
-        
     setAural = function(on)
         s.Shooting.AuralEnabled = (on == nil) and (not s.Shooting.AuralEnabled) or on
         MobileRefresh()
