@@ -2321,7 +2321,7 @@ end)
     local UtilityTab = Window:CreateTab({ Name = "Privacy", Icon = "list" })
         
     AimbotTab:CreateSection("Silent Aim")
-    CombatTab:CreateToggle({
+    AimbotTab:CreateToggle({
         Name = "Enable Silent Aim",
         Desc = "Automatically Shoots when you Jump",
         Flag = "fatal_aural",
@@ -2378,7 +2378,7 @@ end)
         Callback = function(v) s.Shooting.MissChance = v end,
     })
     DefenseTab:CreateSection("Auto Guard")
-    CombatTab:CreateToggle({
+    DefenseTab:CreateToggle({
         Name = "Auto guard", Flag = "fatal_guard", CurrentValue = s.Defending.AutoGuard,
         Callback = function(v) setGuard(v) end,
     })
