@@ -1,4 +1,5 @@
 
+
 local Airflow = loadstring(game:HttpGet("https://raw.githubusercontent.com/PookiePepelsss/Airflow-UI/refs/heads/main/Source.luau"))()
 Airflow:LoadFont({Name = "ValleySans"})
 
@@ -19,6 +20,7 @@ Airflow.Themes.FatalBlue = {
     Error       = Color3.fromRGB(240, 120, 120),
 }
 
+Airflow.Assets.Logo = "rbxassetid://9913176040"
 
 -- ============================================================
 -- GAME ID WHITELIST
@@ -2306,7 +2308,7 @@ end)
     end
     setupOwnNameplateListener()
 
-    local Window = Airflow:CreateWindow({Name = "Calm Hub", LoadingSubtitle = "Credits To Aural Hub", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
+    local Window = Airflow:CreateWindow({Name = "Calm Hub", LoadingSubtitle = "Credits To AuralHub", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
 
     Notify = function(props) Window:Notify(props) end
 
@@ -2600,7 +2602,7 @@ end)
         Callback = function(v) s.Visuals.HideOwnNameplate = v; applyOwnNameplate() end,
     })
     VisualsTab:CreateInput({
-        Name = "Custom username", Placeholder = "e.g. Fatal",
+        Name = "Custom username", Placeholder = "e.g. Calm",
         CurrentValue = s.Visuals.CustomNameText, Flag = "fatal_np_name",
         Callback = function(text)
             s.Visuals.CustomNameText = text
@@ -2609,7 +2611,7 @@ end)
         end,
     })
     VisualsTab:CreateInput({
-        Name = "Custom record", Placeholder = "Calm e.g. 99-0",
+        Name = "Custom record", Placeholder = "e.g. 99-0",
         CurrentValue = s.Visuals.CustomRecordText, Flag = "Calm_np_rec",
         Callback = function(text)
             s.Visuals.CustomRecordText = text
@@ -2619,7 +2621,7 @@ end)
     })
     VisualsTab:CreateInput({
         Name = "Custom title", Placeholder = "e.g. Calm Elite",
-        CurrentValue = s.Visuals.CustomTitleText, Flag = "Calm_np_title",
+        CurrentValue = s.Visuals.CustomTitleText, Flag = "fatal_np_title",
         Callback = function(text)
             s.Visuals.CustomTitleText = text
             s.Visuals.CustomTitle = (text ~= "")
