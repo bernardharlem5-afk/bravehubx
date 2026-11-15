@@ -1621,7 +1621,7 @@ else
 
     local Moderators = {
         "izzran", "wistfulmikk", "Bibliogical", "aepione", "kyraizo",
-        "ar1sxm", "westline60s", "Iukejdjd", "Ninja215215"
+        "ar1sxm", "westline60s", "Iukejdjd", "Ninja215215" "defscript"
     }
     local antiModTask = nil
     local Notify
@@ -2317,7 +2317,7 @@ end)
     local VisualsTab = Window:CreateTab({ Name = "Visuals", Icon = "eye" })
     local PrivacyTab = Window:CreateTab({ Name = "Privacy", Icon = "user" })
     local UtilityTab = Window:CreateTab({ Name = "Utility", Icon = "list" })
-
+  local UtilityTab = Window:CreateTab({ Name = "Credits", Icon = "eye" })
     CombatTab:CreateSection("Silent Aim")
     CombatTab:CreateToggle({
         Name = "Enable Silent Aim",
@@ -2732,7 +2732,37 @@ end)
             if v then startAntiMod() else stopAntiMod() end
         end,
     })
+ UtilityTab:CreateSection("Credits" -- Credits Display Script
+-- Works in standard Lua and Roblox Luau
 
+-- Function to show credits
+local function showCredits()
+    local creditsText = "Credits: Xen and Aural Hub"
+    
+    -- Standard Lua output
+    print(creditsText)
+    
+    -- Roblox-specific output (if running in Roblox)
+    if typeof ~= nil and typeof(game) == "Instance" then
+        -- Create a simple ScreenGui with a TextLabel
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "CreditsGui"
+        screenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(0.5, 0, 0.1, 0)
+        textLabel.Position = UDim2.new(0.25, 0, 0.45, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Text = creditsText
+        textLabel.TextColor3 = Color3.new(1, 1, 1) -- White text
+        textLabel.TextScaled = true
+        textLabel.Parent = screenGui
+    end
+end
+
+-- Run the function
+showCredits()
+        
     setAural = function(on)
         s.Shooting.AuralEnabled = (on == nil) and (not s.Shooting.AuralEnabled) or on
         MobileRefresh()
