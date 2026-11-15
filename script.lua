@@ -19,7 +19,7 @@ Airflow.Themes.CalmBlue = {
     Error       = Color3.fromRGB(240, 120, 120),
 }
 
-Airflow.Assets.Logo = "rbxassetid://10670510726"
+Airflow.Assets.Logo = "https://create.roblox.com/store/asset/9913176040/Floppa-Cat"
 
 -- ============================================================
 -- GAME ID WHITELIST
