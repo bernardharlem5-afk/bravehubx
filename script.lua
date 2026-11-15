@@ -2307,7 +2307,7 @@ end)
     end
     setupOwnNameplateListener()
 
-    local Window = Airflow:CreateWindow({Name = "Fatal Labs", LoadingSubtitle = "Fatal Labs basketball suite", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
+    local Window = Airflow:CreateWindow({Name = "Calm Hub", LoadingSubtitle = "Calm Hub basketball suite", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
 
     Notify = function(props) Window:Notify(props) end
 
