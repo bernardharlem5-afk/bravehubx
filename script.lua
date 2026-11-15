@@ -2,7 +2,7 @@
 local Airflow = loadstring(game:HttpGet("https://raw.githubusercontent.com/PookiePepelsss/Airflow-UI/refs/heads/main/Source.luau"))()
 Airflow:LoadFont({Name = "ValleySans"})
 
-Airflow.Themes.FatalBlue = {
+Airflow.Themes.CalmBlue = {
     Background  = Color3.fromRGB(5,   10,  22),
     Surface     = Color3.fromRGB(9,   16,  34),
     Surface2    = Color3.fromRGB(13,  22,  45),
