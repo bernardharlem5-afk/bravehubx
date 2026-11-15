@@ -19,7 +19,7 @@ Airflow.Themes.FatalBlue = {
     Error       = Color3.fromRGB(240, 120, 120),
 }
 
-Airflow.Assets.Logo = "rbxassetid://114259170836940"
+Airflow.Assets.Logo = "rbxassetid://10670510726"
 
 -- ============================================================
 -- GAME ID WHITELIST
@@ -1396,7 +1396,7 @@ else
         magnetConnection = RunService.Heartbeat:Connect(function()
             if not s.Ball.BallMags then return end
             local character = LocalPlayer.Character
-            if character and not character:FindFirstChild("FatalMagnet") then
+            if character and not character:FindFirstChild("CalmMagnet") then
                 createMagnetHitbox(character)
             end
         end)
@@ -1406,7 +1406,7 @@ else
     local function disableMagnet()
         if magnetConnection then magnetConnection:Disconnect(); magnetConnection = nil end
         if magnetHitbox then magnetHitbox:Destroy(); magnetHitbox = nil end
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("FatalMagnet") then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("CalmlMagnet") then
             LocalPlayer.Character.FatalMagnet:Destroy()
         end
     end
@@ -2322,7 +2322,7 @@ end)
     CombatTab:CreateToggle({
         Name = "Enable Silent Aim",
         Desc = "Automatically Shoots when you Jump",
-        Flag = "fatal_aural",
+        Flag = "Calm_aural",
         CurrentValue = s.Shooting.AuralEnabled,
         Callback = function(v) setAural(v) end,
     })
@@ -2337,37 +2337,37 @@ end)
     CombatTab:CreateSlider({
         Name = "Shot delay",
         Range = { 0.15, 0.42 }, Increment = 0.01, Suffix = "s",
-        CurrentValue = s.Shooting.ShotDelay, Flag = "fatal_delay",
+        CurrentValue = s.Shooting.ShotDelay, Flag = "Calm_delay",
         Callback = function(v) s.Shooting.ShotDelay = v end,
     })
     CombatTab:CreateToggle({
-        Name = "Randomize shot delay", Flag = "fatal_randdelay",
+        Name = "Randomize shot delay", Flag = "Calm_randdelay",
         CurrentValue = s.Shooting.RandomizeShotDelay,
         Callback = function(v) s.Shooting.RandomizeShotDelay = v end,
     })
     CombatTab:CreateSlider({
         Name = "Min delay", Range = { 0, 1 }, Increment = 0.05, Suffix = "s",
-        CurrentValue = s.Shooting.ShotDelayMin, Flag = "fatal_mindelay",
+        CurrentValue = s.Shooting.ShotDelayMin, Flag = "Calm_mindelay",
         Callback = function(v) s.Shooting.ShotDelayMin = v end,
     })
     CombatTab:CreateSlider({
         Name = "Max delay", Range = { 0, 1 }, Increment = 0.05, Suffix = "s",
-        CurrentValue = s.Shooting.ShotDelayMax, Flag = "fatal_maxdelay",
+        CurrentValue = s.Shooting.ShotDelayMax, Flag = "Calm_maxdelay",
         Callback = function(v) s.Shooting.ShotDelayMax = v end,
     })
     CombatTab:CreateToggle({
         Name = "EBL Hop", Desc = "Require second jump before firing.",
-        Flag = "fatal_ebl", CurrentValue = s.Shooting.EBLHop,
+        Flag = "Calm_ebl", CurrentValue = s.Shooting.EBLHop,
         Callback = function(v) s.Shooting.EBLHop = v end,
     })
     CombatTab:CreateToggle({
-        Name = "Humanize aim", Flag = "fatal_human",
+        Name = "Humanize aim", Flag = "Calm_human",
         CurrentValue = s.Shooting.HumanizeAim,
         Callback = function(v) s.Shooting.HumanizeAim = v end,
     })
     CombatTab:CreateSlider({
         Name = "Humanize strength", Range = { 0.2, 5 }, Increment = 0.1,
-        CurrentValue = s.Shooting.HumanizeStrength, Flag = "fatal_hstr",
+        CurrentValue = s.Shooting.HumanizeStrength, Flag = "Calm_hstr",
         Callback = function(v) s.Shooting.HumanizeStrength = v end,
     })
     CombatTab:CreateSlider({
@@ -2381,7 +2381,7 @@ end)
         Callback = function(v) setGuard(v) end,
     })
     CombatTab:CreateKeybind({
-        Name = "Auto guard keybind", Flag = "fatal_guard_key",
+        Name = "Auto guard keybind", Flag = "Calm_guard_key",
         CurrentValue = s.Defending.GuardKeybind,
         Callback = function(key)
             if typeof(key) == "EnumItem" then s.Defending.GuardKeybind = key end
@@ -2410,11 +2410,11 @@ end)
 
     BallTab:CreateSection("Ball Magnet")
     BallTab:CreateToggle({
-        Name = "Ball magnet", Flag = "fatal_mag", CurrentValue = s.Ball.BallMags,
+        Name = "Ball magnet", Flag = "Calm_mag", CurrentValue = s.Ball.BallMags,
         Callback = function(v) setMagnet(v) end,
     })
     BallTab:CreateKeybind({
-        Name = "Magnet keybind", Flag = "fatal_mag_key", CurrentValue = Enum.KeyCode.M,
+        Name = "Magnet keybind", Flag = "Calm_mag_key", CurrentValue = Enum.KeyCode.M,
         Callback = function(key)
             if typeof(key) == "EnumItem" then s.Ball.MagnetKeybind = key.Name end
         end,
@@ -2428,7 +2428,7 @@ end)
         end,
     })
     BallTab:CreateToggle({
-        Name = "Show magnet visualizer", Flag = "fatal_mag_vis",
+        Name = "Show magnet visualizer", Flag = "Calm_mag_vis",
         CurrentValue = s.Ball.BallMagVisualizer,
         Callback = function(v)
             s.Ball.BallMagVisualizer = v
