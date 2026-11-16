@@ -1,4 +1,10 @@
+-- ============================================================
+-- FATAL LABS — Arcade Basketball + Basketball Legends + Hoopz
+-- ============================================================
 
+local _print, _warn = print, warn
+print = function() end
+warn = function() end
 
 local Airflow = loadstring(game:HttpGet("https://raw.githubusercontent.com/PookiePepelsss/Airflow-UI/refs/heads/main/Source.luau"))()
 Airflow:LoadFont({Name = "ValleySans"})
@@ -20,7 +26,7 @@ Airflow.Themes.FatalBlue = {
     Error       = Color3.fromRGB(240, 120, 120),
 }
 
-Airflow.Assets.Logo = "rbxassetid://9913176040"
+Airflow.Assets.Logo = "rbxassetid://114259170836940"
 
 -- ============================================================
 -- GAME ID WHITELIST
@@ -2308,7 +2314,7 @@ end)
     end
     setupOwnNameplateListener()
 
-    local Window = Airflow:CreateWindow({Name = "Project Nova", LoadingSubtitle = "Credits To AuralHub & Xen", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
+    local Window = Airflow:CreateWindow({Name = "Project Nova", LoadingSubtitle = "xen is the best", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
 
     Notify = function(props) Window:Notify(props) end
 
@@ -2612,7 +2618,7 @@ end)
     })
     VisualsTab:CreateInput({
         Name = "Custom record", Placeholder = "e.g. 99-0",
-        CurrentValue = s.Visuals.CustomRecordText, Flag = "Calm_np_rec",
+        CurrentValue = s.Visuals.CustomRecordText, Flag = "fatal_np_rec",
         Callback = function(text)
             s.Visuals.CustomRecordText = text
             s.Visuals.CustomRecord = (text ~= "")
