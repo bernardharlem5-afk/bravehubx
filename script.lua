@@ -2308,27 +2308,26 @@ end)
     end
     setupOwnNameplateListener()
 
-    local Window = Airflow:CreateWindow({Name = "Project Nova", LoadingSubtitle = "Project Nova", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
+    local Window = Airflow:CreateWindow({Name = "Project Nova", LoadingSubtitle = "Credits To AuralHub & Xen", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
 
     Notify = function(props) Window:Notify(props) end
 
-    local CombatTab = Window:CreateTab({ Name = "Aimbot", Icon = "swords" })
-    local BallTab = Window:CreateTab({ Name = "Defense", Icon = "circle" })
-    local HVHTab = Window:CreateTab({ Name = "Ball", Icon = "activity" })
+    local CombatTab = Window:CreateTab({ Name = "Combat", Icon = "swords" })
+    local BallTab = Window:CreateTab({ Name = "Ball", Icon = "circle" })
+    local HVHTab = Window:CreateTab({ Name = "HVH", Icon = "activity" })
     local VisualsTab = Window:CreateTab({ Name = "Visuals", Icon = "eye" })
-    local PrivacyTab = Window:CreateTab({ Name = "HVH", Icon = "user" })
-    local UtilityTab = Window:CreateTab({ Name = "Speed", Icon = "list" })
-    local UtilityTab = Window:CreateTab({ Name = "Privacy", Icon = "list" })
-        
-    AimbotTab:CreateSection("Silent Aim")
-    AimbotTab:CreateToggle({
+    local PrivacyTab = Window:CreateTab({ Name = "Privacy", Icon = "user" })
+    local UtilityTab = Window:CreateTab({ Name = "Utility", Icon = "list" })
+
+    CombatTab:CreateSection("Silent Aim")
+    CombatTab:CreateToggle({
         Name = "Enable Silent Aim",
         Desc = "Automatically Shoots when you Jump",
         Flag = "fatal_aural",
         CurrentValue = s.Shooting.AuralEnabled,
         Callback = function(v) setAural(v) end,
     })
-    AimbotTab:CreateKeybind({
+    CombatTab:CreateKeybind({
         Name = "Aimbot keybind",
         Flag = "fatal_aural_key",
         CurrentValue = s.Shooting.AuralKeybind,
@@ -2336,75 +2335,75 @@ end)
             if typeof(key) == "EnumItem" then s.Shooting.AuralKeybind = key end
         end,
     })
-    AimbotTab:CreateSlider({
+    CombatTab:CreateSlider({
         Name = "Shot delay",
         Range = { 0.15, 0.42 }, Increment = 0.01, Suffix = "s",
         CurrentValue = s.Shooting.ShotDelay, Flag = "fatal_delay",
         Callback = function(v) s.Shooting.ShotDelay = v end,
     })
-    AimbotTab:CreateToggle({
+    CombatTab:CreateToggle({
         Name = "Randomize shot delay", Flag = "fatal_randdelay",
         CurrentValue = s.Shooting.RandomizeShotDelay,
         Callback = function(v) s.Shooting.RandomizeShotDelay = v end,
     })
-    AimbotTab:CreateSlider({
+    CombatTab:CreateSlider({
         Name = "Min delay", Range = { 0, 1 }, Increment = 0.05, Suffix = "s",
         CurrentValue = s.Shooting.ShotDelayMin, Flag = "fatal_mindelay",
         Callback = function(v) s.Shooting.ShotDelayMin = v end,
     })
-    AimbotTab:CreateSlider({
+    CombatTab:CreateSlider({
         Name = "Max delay", Range = { 0, 1 }, Increment = 0.05, Suffix = "s",
         CurrentValue = s.Shooting.ShotDelayMax, Flag = "fatal_maxdelay",
         Callback = function(v) s.Shooting.ShotDelayMax = v end,
     })
-    AimbotTab:CreateToggle({
+    CombatTab:CreateToggle({
         Name = "EBL Hop", Desc = "Require second jump before firing.",
         Flag = "fatal_ebl", CurrentValue = s.Shooting.EBLHop,
         Callback = function(v) s.Shooting.EBLHop = v end,
     })
-    AimbotTab:CreateToggle({
+    CombatTab:CreateToggle({
         Name = "Humanize aim", Flag = "fatal_human",
         CurrentValue = s.Shooting.HumanizeAim,
         Callback = function(v) s.Shooting.HumanizeAim = v end,
     })
-    AimbotTab:CreateSlider({
+    CombatTab:CreateSlider({
         Name = "Humanize strength", Range = { 0.2, 5 }, Increment = 0.1,
         CurrentValue = s.Shooting.HumanizeStrength, Flag = "fatal_hstr",
         Callback = function(v) s.Shooting.HumanizeStrength = v end,
     })
-    AimbotTab:CreateSlider({
+    CombatTab:CreateSlider({
         Name = "Miss chance", Range = { 0, 80 }, Increment = 1, Suffix = "%",
         CurrentValue = s.Shooting.MissChance, Flag = "fatal_miss",
         Callback = function(v) s.Shooting.MissChance = v end,
     })
-    DefenseTab:CreateSection("Auto Guard")
-    DefenseTab:CreateToggle({
+    CombatTab:CreateSection("Auto Guard")
+    CombatTab:CreateToggle({
         Name = "Auto guard", Flag = "fatal_guard", CurrentValue = s.Defending.AutoGuard,
         Callback = function(v) setGuard(v) end,
     })
-    DefenseTab:CreateKeybind({
+    CombatTab:CreateKeybind({
         Name = "Auto guard keybind", Flag = "fatal_guard_key",
         CurrentValue = s.Defending.GuardKeybind,
         Callback = function(key)
             if typeof(key) == "EnumItem" then s.Defending.GuardKeybind = key end
         end,
     })
-    DefenseTab:CreateDropdown({
+    CombatTab:CreateDropdown({
         Name = "Guard mode", Options = { "Reactive", "Balanced", "Aggressive" },
         CurrentValue = s.Defending.AutoGuardMode, Flag = "fatal_guard_mode",
         Callback = function(v) s.Defending.AutoGuardMode = v end,
     })
-    DefenseTab:CreateToggle({
+    CombatTab:CreateToggle({
         Name = "Guard nearest if no dribbler", Flag = "fatal_guard_near",
         CurrentValue = s.Defending.AutoGuardNearest,
         Callback = function(v) s.Defending.AutoGuardNearest = v end,
     })
-    DefenseTab:CreateSlider({
+    CombatTab:CreateSlider({
         Name = "Guard range", Range = { 10, 60 }, Increment = 1,
         CurrentValue = s.Defending.AutoGuardRange, Flag = "fatal_guard_range",
         Callback = function(v) s.Defending.AutoGuardRange = v end,
     })
-    DefenseTab:CreateSlider({
+    CombatTab:CreateSlider({
         Name = "Prediction strength", Range = { 0.1, 1 }, Increment = 0.05,
         CurrentValue = s.Defending.GuardPrediction, Flag = "fatal_guard_pred",
         Callback = function(v) s.Defending.GuardPrediction = v end,
@@ -2498,21 +2497,21 @@ end)
         end,
     })
 
-    SpeedTab:CreateSection("TPWalk")
-    SpeedTab:CreateToggle({
+    BallTab:CreateSection("TPWalk")
+    BallTab:CreateToggle({
         Name = "tpwalk",
         Desc = "Teleport-walk; nudges your root part each frame for a smooth glide.",
         Flag = "fatal_tpwalk", CurrentValue = s.TPWalk.Enabled,
         Callback = function(v) setTPWalk(v) end,
     })
-    SpeedTab:CreateKeybind({
+    BallTab:CreateKeybind({
         Name = "tpwalk keybind", Flag = "fatal_tpwalk_key",
         CurrentValue = s.TPWalk.Keybind,
         Callback = function(key)
             if typeof(key) == "EnumItem" then s.TPWalk.Keybind = key end
         end,
     })
-    SpeedTab:CreateSlider({
+    BallTab:CreateSlider({
         Name = "tpwalk speed", Desc = "Step distance per frame (0.001 – 0.06).",
         Range = { 0.001, 0.06 }, Increment = 0.001,
         CurrentValue = s.TPWalk.Speed, Flag = "fatal_tpwalk_speed",
@@ -2521,13 +2520,13 @@ end)
 
     buildHVHTab(HVHTab, s.HVH)
 
-    AimbotTab:CreateSection("Aimbot Range Indicator")
-    AimbotTab:CreateToggle({
+    VisualsTab:CreateSection("Aimbot Range Indicator")
+    VisualsTab:CreateToggle({
         Name = "Aimbot range indicator", Flag = "fatal_ind",
         CurrentValue = s.Visuals.ShotIndicator,
         Callback = setShotIndicator,
     })
-    AimbotTab:CreateDropdown({
+    VisualsTab:CreateDropdown({
         Name = "Indicator color",
         Options = { "Blue", "Purple", "Green", "Red", "Yellow" },
         CurrentValue = s.Visuals.IndicatorColor, Flag = "fatal_ind_col",
@@ -2641,7 +2640,7 @@ end)
         Callback = function(v) s.Misc.Device = v; SpoofDevice() end,
     })
 
-    VisualsTab:CreateSection("Ball Changer")
+    PrivacyTab:CreateSection("Ball Changer")
     PrivacyTab:CreateDropdown({
         Name = "Select ball", Options = #BallNames > 0 and BallNames or { "None" },
         CurrentValue = s.BallChanger.SelectedBall, Flag = "fatal_ball_sel",
@@ -2651,7 +2650,7 @@ end)
             if s.BallChanger.Enabled then pcall(applyBallChanger) end
         end,
     })
-    VisualsTab:CreateToggle({
+    PrivacyTab:CreateToggle({
         Name = "Enable ball changer", Flag = "fatal_ball",
         CurrentValue = s.BallChanger.Enabled,
         Callback = function(v)
@@ -2659,7 +2658,7 @@ end)
             if v then pcall(applyBallChanger) else pcall(resetBallChanger) end
         end,
     })
-    VisualsTab:CreateButton({
+    PrivacyTab:CreateButton({
         Name = "Reset ball",
         Callback = function()
             s.BallChanger.Enabled = false
@@ -2669,8 +2668,8 @@ end)
         end,
     })
 
-    VisualsTab:CreateSection("Trail Spoofer")
-    VisualsTab:CreateDropdown({
+    PrivacyTab:CreateSection("Trail Spoofer")
+    PrivacyTab:CreateDropdown({
         Name = "Select trail", Options = #TrailNames > 0 and TrailNames or { "None" },
         CurrentValue = s.TrailSpoofer.SelectedTrail, Flag = "fatal_trail_sel",
         Callback = function(v)
@@ -2679,7 +2678,7 @@ end)
             if s.TrailSpoofer.Enabled then pcall(applyTrailSpoofer) end
         end,
     })
-    VisualsTab:CreateToggle({
+    PrivacyTab:CreateToggle({
         Name = "Enable trail spoofer", Flag = "fatal_trail",
         CurrentValue = s.TrailSpoofer.Enabled,
         Callback = function(v)
@@ -2687,7 +2686,7 @@ end)
             if v then pcall(applyTrailSpoofer) else pcall(resetTrailSpoofer) end
         end,
     })
-    VisualsTab:CreateButton({
+    PrivacyTab:CreateButton({
         Name = "Reset trail",
         Callback = function()
             s.TrailSpoofer.Enabled = false
@@ -2697,8 +2696,8 @@ end)
         end,
     })
 
-    VisualsTab:CreateSection("Ball Aura Spoofer")
-    VisualsTab:CreateDropdown({
+    PrivacyTab:CreateSection("Ball Aura Spoofer")
+    PrivacyTab:CreateDropdown({
         Name = "Select aura", Options = #AuraNames > 0 and AuraNames or { "None" },
         CurrentValue = s.BallAura.SelectedAura, Flag = "fatal_aura_sel",
         Callback = function(v)
@@ -2707,7 +2706,7 @@ end)
             if s.BallAura.Enabled then pcall(applyBallAura) end
         end,
     })
-    VisualsTab:CreateToggle({
+    PrivacyTab:CreateToggle({
         Name = "Enable ball aura spoofer", Flag = "fatal_aura",
         CurrentValue = s.BallAura.Enabled,
         Callback = function(v)
@@ -2715,7 +2714,7 @@ end)
             if v then pcall(applyBallAura) else pcall(resetBallAura) end
         end,
     })
-    VisualsTab:CreateButton({
+    PrivacyTab:CreateButton({
         Name = "Reset ball aura",
         Callback = function()
             s.BallAura.Enabled = false
@@ -2725,8 +2724,8 @@ end)
         end,
     })
 
-    PrivacyTab:CreateSection("Anti Moderator")
-    PrivacyTab:CreateToggle({
+    UtilityTab:CreateSection("Anti Moderator")
+    UtilityTab:CreateToggle({
         Name = "Anti moderator", Desc = "Notifies when a moderator is in the server.",
         Flag = "fatal_mod", CurrentValue = s.Misc.AntiModerator,
         Callback = function(v)
