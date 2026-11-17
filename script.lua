@@ -1,5 +1,5 @@
 -- ============================================================
--- FATAL LABS — Arcade Basketball + Basketball Legends + Hoopz
+-- PROJECT NOVA — Arcade Basketball + Basketball Legends + Hoopz
 -- ============================================================
 
 local _print, _warn = print, warn
@@ -26,7 +26,7 @@ Airflow.Themes.FatalBlue = {
     Error       = Color3.fromRGB(240, 120, 120),
 }
 
-Airflow.Assets.Logo = "rbxassetid://114259170836940"
+Airflow.Assets.Logo = "rbxassetid://71156154955107"
 
 -- ============================================================
 -- GAME ID WHITELIST
@@ -2314,7 +2314,7 @@ end)
     end
     setupOwnNameplateListener()
 
-    local Window = Airflow:CreateWindow({Name = "Project Nova", LoadingSubtitle = "xen is the best", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
+    local Window = Airflow:CreateWindow({Name = "Project Nova", LoadingSubtitle = ".gg/rrMMQhCSFB", Theme = "FatalBlue", ToggleUIKeybind = "RightControl", ConfigurationSaving = {Enabled = true, FolderName = "FatalLabs", FileName = "FatalLabs"}})
 
     Notify = function(props) Window:Notify(props) end
 
